@@ -7,13 +7,14 @@ import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSy_PLACEHOLDER_KEY",
+    apiKey: "AIzaSyBHVhvLjTGXJHAfyiJAfqglZEmvSmN43bk",
     authDomain: "fleet-bus-494014-q1.firebaseapp.com",
     databaseURL: "https://fleet-bus-494014-q1-default-rtdb.firebaseio.com",
     projectId: "fleet-bus-494014-q1",
-    storageBucket: "fleet-bus-494014-q1.appspot.com",
-    messagingSenderId: "PLACEHOLDER",
-    appId: "PLACEHOLDER"
+    storageBucket: "fleet-bus-494014-q1.firebasestorage.app",
+    messagingSenderId: "929350853317",
+    appId: "1:929350853317:web:a16ed41fb2274a9b0f06ac",
+    measurementId: "G-ZH85HCNMFB"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -63,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             await push(alertsRef, newAlert);
-            
+
             statusMsg.style.color = '#22c55e';
             statusMsg.innerText = 'Alert Broadcasted Successfully!';
             logEvent(analytics, 'alert_broadcasted', { type });

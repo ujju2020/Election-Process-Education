@@ -4,13 +4,12 @@
  */
 console.log("[MatdanSathi] Script Load Started");
 
-// Fallback logic for when modules or data takes time
 const FALLBACK_DATA = {
     en: {
         ui: { journey: "Journey", assistant: "Assistant", vote: "Vote", readiness: "Readiness", alerts: "Alerts", ask_placeholder: "Ask about voting...", booth_finder: "Booth Finder", view_details: "View Details", mark_read: "Mark Read" },
-        journey: [{id:1, title:"Delimitation", desc:"Defining boundaries."}, {id:2, title:"Electoral Rolls", desc:"Update your name."}, {id:3, title:"Notification", desc:"Election announcement."}, {id:4, title:"Nominations", desc:"Candidates file papers."}, {id:5, title:"Campaigning", desc:"Vision pitch."}, {id:6, title:"Polling", desc:"Cast your vote."}, {id:7, title:"Results", desc:"Winners declared."}],
-        candidates: [{id:1, name:"Green Party", symbol:"leaf"}, {id:2, name:"Tech Vision", symbol:"cpu"}, {id:3, name:"Rights Party", symbol:"scale"}],
-        readiness: [{id:1, title:"Check List", desc:"Are you ready?", action:"Check Now", url:"https://voters.eci.gov.in"}]
+        journey: [{ id: 1, title: "Delimitation", desc: "Defining boundaries." }, { id: 2, title: "Electoral Rolls", desc: "Update your name." }, { id: 3, title: "Notification", desc: "Election announcement." }, { id: 4, title: "Nominations", desc: "Candidates file papers." }, { id: 5, title: "Campaigning", desc: "Vision pitch." }, { id: 6, title: "Polling", desc: "Cast your vote." }, { id: 7, title: "Results", desc: "Winners declared." }],
+        candidates: [{ id: 1, name: "Green Party", symbol: "leaf" }, { id: 2, name: "Tech Vision", symbol: "cpu" }, { id: 3, name: "Rights Party", symbol: "scale" }],
+        readiness: [{ id: 1, title: "Check List", desc: "Are you ready?", action: "Check Now", url: "https://voters.eci.gov.in" }]
     }
 };
 
@@ -18,17 +17,20 @@ let appData = null;
 let currentLang = localStorage.getItem('matdan_lang') || 'en';
 let activeTab = 'journey';
 
-// ESM Imports - These run at the top level
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSy_PLACEHOLDER_KEY", 
+    apiKey: "AIzaSyBHVhvLjTGXJHAfyiJAfqglZEmvSmN43bk",
     authDomain: "fleet-bus-494014-q1.firebaseapp.com",
     databaseURL: "https://fleet-bus-494014-q1-default-rtdb.firebaseio.com",
-    projectId: "fleet-bus-494014-q1"
+    projectId: "fleet-bus-494014-q1",
+    storageBucket: "fleet-bus-494014-q1.firebasestorage.app",
+    messagingSenderId: "929350853317",
+    appId: "1:929350853317:web:a16ed41fb2274a9b0f06ac",
+    measurementId: "G-ZH85HCNMFB"
 };
 
 let analytics, db, auth;
@@ -38,7 +40,7 @@ function initFirebase() {
         db = getDatabase(app);
         auth = getAuth(app);
         analytics = getAnalytics(app);
-        signInAnonymously(auth).catch(() => {});
+        signInAnonymously(auth).catch(() => { });
         console.log("[MatdanSathi] Firebase Initialized");
     } catch (e) {
         console.warn("[MatdanSathi] Firebase Init Failed - Offline/Placeholder Mode Active");
@@ -47,10 +49,9 @@ function initFirebase() {
 
 function escapeHTML(str) {
     if (typeof str !== 'string') return str || '';
-    return str.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t] || t));
+    return str.replace(/[&<>'"]/g, t => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t));
 }
 
-// UI RENDERING ENGINE
 const getUI = () => appData?.[currentLang]?.ui || FALLBACK_DATA.en.ui;
 
 function renderJourney(container) {
@@ -138,7 +139,6 @@ function renderAlerts(container) {
     container.appendChild(t.content.cloneNode(true));
 }
 
-// GLOBAL SWITCHER
 window.switchTab = (id) => {
     console.log("[MatdanSathi] Tab:", id);
     activeTab = id;
@@ -161,7 +161,6 @@ async function start() {
     const resp = await fetch('data.json').catch(() => null);
     if (resp && resp.ok) appData = await resp.json();
     
-    // Set UI Strings
     const ui = getUI();
     const map = { journey: ui.journey, assistant: ui.assistant, vote: ui.vote || 'Vote', readiness: ui.readiness, alerts: ui.alerts };
     Object.entries(map).forEach(([k, v]) => {
@@ -186,7 +185,6 @@ async function start() {
     window.switchTab('journey');
 }
 
-// BOOTSTRAP
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', start);
 } else {
