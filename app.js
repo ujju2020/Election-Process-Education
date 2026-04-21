@@ -11,8 +11,14 @@ import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/1
 import { getPerformance, trace } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-performance.js";
 import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-remote-config.js";
 
+// Global Error Logging for Debugging
+window.onerror = function(msg, url, line, col, error) {
+    console.error(`[App Error] ${msg} at ${line}:${col}. URL: ${url}`);
+    return false;
+};
+
 const firebaseConfig = {
-    apiKey: "AIzaSy_PLACEHOLDER_KEY", // Note: User should provide actual API Key
+    apiKey: "AIzaSy_PLACEHOLDER_KEY", 
     authDomain: "fleet-bus-494014-q1.firebaseapp.com",
     databaseURL: "https://fleet-bus-494014-q1-default-rtdb.firebaseio.com",
     projectId: "fleet-bus-494014-q1",
@@ -21,43 +27,18 @@ const firebaseConfig = {
     appId: "PLACEHOLDER"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getDatabase(app);
-const auth = getAuth(app);
-const perf = getPerformance(app);
-const remoteConfig = getRemoteConfig(app);
-
-// Remote Config Defaults
-remoteConfig.defaultConfig = {
-    assistant_name: "Matdan Sathi",
-    current_phase: "Preparation"
-};
-
-// Security: XSS Mitigation
-function escapeHTML(str) {
-    if (typeof str !== 'string') return str;
-    return str.replace(/[&<>'"]/g, 
-        tag => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            "'": '&#39;',
-            '"': '&quot;'
-        }[tag] || tag)
-    );
+// Initialize Firebase with safety
+let analytics, db, auth, perf, remoteConfig;
+try {
+    const app = initializeApp(firebaseConfig);
+    analytics = getAnalytics(app);
+    db = getDatabase(app);
+    auth = getAuth(app);
+    perf = getPerformance(app);
+    remoteConfig = getRemoteConfig(app);
+} catch (e) {
+    console.warn("Firebase initialization failed. Some features may be disabled.", e.message);
 }
-
-const ELECTION_STAGES = [
-    { id: 1, title: "Delimitation", desc: "Geographical boundaries of constituencies are redrawn to ensure equal representation.", icon: "map-pin" },
-    { id: 2, title: "Electoral Rolls", desc: "Updating the list of eligible voters. Ensure your name is on the list!", icon: "users" },
-    { id: 3, title: "Notification", desc: "The official announcement by the ECI calling for elections.", icon: "bell" },
-    { id: 4, title: "Nominations", desc: "Candidates file papers. Scrutiny and withdrawals follow.", icon: "file-text" },
-    { id: 5, title: "Campaigning", desc: "Political activities and the Model Code of Conduct come into effect.", icon: "megaphone" },
-    { id: 6, title: "Polling Day", desc: "The crucial day when citizens cast their votes using EVMs.", icon: "box" },
-    { id: 7, title: "Counting & Results", desc: "Votes are counted and winners are declared.", icon: "tally-5" }
-];
 
 let appData = null;
 let currentLang = localStorage.getItem('matdan_lang') || 'en';
@@ -68,13 +49,28 @@ const MOCK_ALERTS = [
     { id: 2, type: "warning", title: "Code of Conduct", desc: "The Model Code of Conduct is now in effect for the current phase.", unread: false }
 ];
 
+// Fallback Strings for safety
+const FALLBACK_STRINGS = {
+    journey: "Journey", assistant: "Assistant", vote: "Vote", readiness: "Readiness", alerts: "Alerts",
+    ask_placeholder: "Ask about voting...", booth_finder: "Booth Finder", view_details: "View Details"
+};
+
+// Security: XSS Mitigation
+function escapeHTML(str) {
+    if (typeof str !== 'string') return str || '';
+    return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[tag] || tag));
+}
+
 // Fetch content from data.json
 async function loadAppData() {
     try {
         const response = await fetch('data.json');
+        if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
         appData = await response.json();
     } catch (e) {
-        console.error('Failed to load app data', e);
+        console.error('Failed to load app data. Using fallbacks.', e);
     }
 }
 
@@ -82,9 +78,7 @@ async function loadAppData() {
 function registerSW() {
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./service-worker.js')
-                .then(reg => console.log('SW Registered', reg.scope))
-                .catch(err => console.log('SW Registration Failed', err));
+            navigator.serviceWorker.register('./service-worker.js').catch(err => console.log('SW Failed', err));
         });
     }
 }
@@ -92,12 +86,13 @@ function registerSW() {
 document.addEventListener('DOMContentLoaded', async () => {
     // Non-blocking Firebase Init
     const initFirebase = async () => {
+        if (!auth) return;
         try {
             await signInAnonymously(auth);
-            logEvent(analytics, 'app_open');
-            await fetchAndActivate(remoteConfig);
+            if (analytics) logEvent(analytics, 'app_open');
+            if (remoteConfig) await fetchAndActivate(remoteConfig);
         } catch (e) {
-            console.warn('[Firebase] Init partial success', e.message);
+            console.warn('[Firebase] Auth partial success');
         }
     };
     initFirebase();
@@ -109,34 +104,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     const langButtons = document.querySelectorAll('.lang-btn');
     const profileBtn = document.querySelector('.profile-btn');
 
-    function updateUIStrings() {
-        if (!appData || !appData[currentLang]) return;
-        const strings = appData[currentLang].ui;
-        
-        // Update Nav
-        document.querySelector('[data-tab="journey"] span').innerText = strings.journey;
-        document.querySelector('[data-tab="assistant"] span').innerText = strings.assistant;
-        document.querySelector('[data-tab="vote"] span').innerText = strings.vote || 'Vote';
-        document.querySelector('[data-tab="readiness"] span').innerText = strings.readiness;
-        document.querySelector('[data-tab="alerts"] span').innerText = strings.alerts;
+    const getStrings = () => appData?.[currentLang]?.ui || FALLBACK_STRINGS;
 
-        // Set Active Lang Button
-        langButtons.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.lang === currentLang);
+    function updateUIStrings() {
+        const strings = getStrings();
+        
+        const navMap = { journey: strings.journey, assistant: strings.assistant, vote: strings.vote || 'Vote', readiness: strings.readiness, alerts: strings.alerts };
+        Object.entries(navMap).forEach(([tab, text]) => {
+            const span = document.querySelector(`[data-tab="${tab}"] span`);
+            if (span) span.innerText = text;
         });
+
+        langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === currentLang));
     }
 
     const renderJourney = () => {
         const template = document.getElementById('journey-view-template');
-        if (!template) return;
+        if (!template || !mainContent) return;
         mainContent.innerHTML = '';
         mainContent.appendChild(template.content.cloneNode(true));
         
-        const strings = appData[currentLang].ui;
-        mainContent.querySelector('h2').innerText = strings.journey + ' Journey';
+        const strings = getStrings();
+        const header = mainContent.querySelector('h2');
+        if (header) header.innerText = (strings.journey || 'Election') + ' Journey';
 
         const container = mainContent.querySelector('.timeline-container');
-        const data = (appData && appData[currentLang].journey) || [];
+        if (!container) return;
+        const data = appData?.[currentLang]?.journey || [];
         
         data.forEach(stage => {
             const card = document.createElement('div');
@@ -155,25 +149,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const renderAssistant = () => {
         const template = document.getElementById('assistant-view-template');
-        if (!template) return;
+        if (!template || !mainContent) return;
         mainContent.innerHTML = '';
         mainContent.appendChild(template.content.cloneNode(true));
         
         const chatMessages = document.getElementById('chat-messages');
         const input = document.getElementById('chat-input');
-        const sendBtn = document.querySelector('.send-btn');
-        const strings = appData[currentLang].ui;
+        const sendBtn = mainContent.querySelector('.send-btn');
+        const strings = getStrings();
 
         if (input) input.placeholder = strings.ask_placeholder;
         if (chatMessages) {
-            chatMessages.querySelector('.msg-bubble').innerText = currentLang === 'bn' ? 'নমস্কার! আমি আপনার নির্বাচনী সহকারী। আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি?' : 
-                                                                currentLang === 'hi' ? 'नमस्ते! मैं आपका चुनाव सहायक हूं। मैं आज आपकी क्या मदद कर सकता हूं?' : 
-                                                                'Namaste! I am your Election Assistant. How can I help you today?';
+            const welcome = currentLang === 'bn' ? 'নমস্কার! আমি আপনার নির্বাচনী সহকারী। আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি?' : 
+                          currentLang === 'hi' ? 'नमस्ते! मैं आपका चुनाव सहायक हूं। मैं आज आपकी क्या मदद कर सकता हूं?' : 
+                          'Namaste! I am your Election Assistant. How can I help you today?';
+            const bubble = chatMessages.querySelector('.msg-bubble');
+            if (bubble) bubble.innerText = welcome;
         }
 
         const sendMessage = () => {
             const text = input.value.trim();
-            if (!text) return;
+            if (!text || !chatMessages) return;
 
             const userMsg = document.createElement('div');
             userMsg.className = 'user-msg assistant-msg animate-up';
@@ -181,20 +177,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             chatMessages.appendChild(userMsg);
             input.value = '';
 
-            logEvent(analytics, 'assistant_query', { query: text });
+            if (analytics) logEvent(analytics, 'assistant_query', { query: text });
 
             setTimeout(() => {
-                let responseText = currentLang === 'bn' ? `"${escapeHTML(text)}" সম্পর্কে এটি একটি দুর্দান্ত প্রশ্ন। সাধারণত, নির্বাচন কমিশন এই বিষয়ে নিয়মিত আপডেট দেয়!` :
-                                   currentLang === 'hi' ? `"${escapeHTML(text)}" के बारे में यह एक बेहतरीन सवाल है। आम तौर पर, चुनाव आयोग इस पर अपडेटेड दिशा-निर्देश प्रदान करता है!` :
-                                   `That's a great question about "${escapeHTML(text)}". Generally, the ECI provides updated guidelines on this!`;
+                let responseText = currentLang === 'bn' ? `"${escapeHTML(text)}" সম্পর্কে এটি একটি দুর্দান্ত প্রশ্ন।` :
+                                   currentLang === 'hi' ? `"${escapeHTML(text)}" के बारे में यह एक बेहतरीन सवाल है।` :
+                                   `That's a great question about "${escapeHTML(text)}".`;
                 
-                if (appData && appData[currentLang].faqs) {
-                    const match = appData[currentLang].faqs.find(f => 
-                        text.toLowerCase().includes(f.question.toLowerCase()) ||
-                        f.question.toLowerCase().includes(text.toLowerCase())
-                    );
-                    if (match) responseText = match.answer;
-                }
+                const faqs = appData?.[currentLang]?.faqs || [];
+                const match = faqs.find(f => text.toLowerCase().includes(f.question.toLowerCase()) || f.question.toLowerCase().includes(text.toLowerCase()));
+                if (match) responseText = match.answer;
 
                 const botMsg = document.createElement('div');
                 botMsg.className = 'assistant-msg animate-up';
@@ -205,7 +197,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 chatMessages.appendChild(botMsg);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
                 if (typeof lucide !== 'undefined') lucide.createIcons();
-            }, 1000);
+            }, 800);
         };
 
         if (sendBtn) sendBtn.addEventListener('click', sendMessage);
@@ -214,12 +206,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const renderReadiness = () => {
-        const strings = appData[currentLang].ui;
+        const strings = getStrings();
         mainContent.innerHTML = `
             <section class="view-section">
                 <div class="section-header">
                     <h2>${strings.readiness} Checklist</h2>
-                    <p>${currentLang === 'bn' ? 'ব্যালটের জন্য আপনি প্রস্তুত কিনা নিশ্চিত করুন' : currentLang === 'hi' ? 'सुनिश्चित करें कि आप मतपत्र के लिए तैयार हैं' : 'Ensure you are ready for the ballot'}</p>
+                    <p>${currentLang === 'bn' ? 'ব্যালটের জন্য প্রস্তুত কিনা দেখুন' : currentLang === 'hi' ? 'मतदान के लिए तैयारी की जांच करें' : 'Check for ballot readiness'}</p>
                 </div>
                 <div class="readiness-list timeline-container"></div>
                 <div class="glass-panel booth-finder-feature animate-up" style="margin-top: 24px; padding: 20px;">
@@ -229,11 +221,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                         <h3>${strings.booth_finder}</h3>
                     </div>
-                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">
-                        ${currentLang === 'bn' ? 'আপনার নির্দিষ্ট ভোটকেন্দ্র এবং বুথের অবস্থান জানতে অফিসিয়াল পোর্টাল ব্যবহার করুন।' : 
-                          currentLang === 'hi' ? 'अपने विशेष मतदान केंद्र और बूथ की स्थिति जानने के लिए आधिकारिक पोर्टल का उपयोग करें।' : 
-                          'Use the official portal to find your dedicated polling station and booth location.'}
-                    </p>
                     <a href="https://electoralsearch.eci.gov.in/pollingstation" target="_blank" class="primary-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
                         <span>${strings.view_details}</span>
                         <i data-lucide="external-link" style="width: 14px;"></i>
@@ -242,12 +229,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             </section>
         `;
         const container = mainContent.querySelector('.readiness-list');
-        const data = (appData && appData[currentLang].readiness) || [];
+        const data = appData?.[currentLang]?.readiness || [];
 
         data.forEach(item => {
             const card = document.createElement('div');
             card.className = 'timeline-card animate-up';
-            card.style.cursor = 'pointer';
             card.innerHTML = `
                 <div class="step-num"><i data-lucide="check"></i></div>
                 <div class="step-content">
@@ -256,27 +242,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <span class="text-btn" style="margin-top:8px; display:inline-block">${escapeHTML(item.action)}</span>
                 </div>
             `;
-            card.addEventListener('click', () => {
-                if (item.url) window.open(item.url, '_blank');
-                else alert(`Action: ${item.action}`);
-            });
-            container.appendChild(card);
+            card.addEventListener('click', () => item.url && window.open(item.url, '_blank'));
+            if (container) container.appendChild(card);
         });
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
     const renderAlerts = () => {
         const template = document.getElementById('alerts-view-template');
-        if (!template) return;
+        if (!template || !mainContent) return;
         mainContent.innerHTML = '';
         mainContent.appendChild(template.content.cloneNode(true));
         
-        const strings = appData[currentLang].ui;
-        mainContent.querySelector('h2').innerText = strings.alerts;
-        const markBtn = mainContent.querySelector('.text-btn');
-        if (markBtn) markBtn.innerText = strings.mark_read;
+        const strings = getStrings();
+        const header = mainContent.querySelector('h2');
+        if (header) header.innerText = strings.alerts;
 
         const container = mainContent.querySelector('.alerts-list');
+        if (!container) return;
         MOCK_ALERTS.forEach(alert => {
             const card = document.createElement('div');
             card.className = `alert-card glass-panel ${alert.unread ? 'unread' : ''}`;
@@ -295,24 +278,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     let isBallotActive = false;
     const renderVote = () => {
         const template = document.getElementById('vote-view-template');
-        if (!template) return;
+        if (!template || !mainContent) return;
         mainContent.innerHTML = '';
         mainContent.appendChild(template.content.cloneNode(true));
 
-        const candidates = (appData && appData[currentLang].candidates) || [];
+        const candidates = appData?.[currentLang]?.candidates || [];
         const buCandidates = document.getElementById('bu-candidates');
         const cuBusyLight = document.getElementById('cu-busy-light');
         const buReadyLight = document.getElementById('bu-ready-light');
         const ballotBtn = document.getElementById('ballot-trigger');
 
         const updateEVMState = () => {
-            if (isBallotActive) {
-                if (cuBusyLight) cuBusyLight.classList.remove('active');
-                if (buReadyLight) buReadyLight.classList.add('active');
-            } else {
-                if (cuBusyLight) cuBusyLight.classList.add('active');
-                if (buReadyLight) buReadyLight.classList.remove('active');
-            }
+            if (cuBusyLight) cuBusyLight.classList.toggle('active', !isBallotActive);
+            if (buReadyLight) buReadyLight.classList.toggle('active', isBallotActive);
         };
         updateEVMState();
 
@@ -322,7 +300,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     isBallotActive = true;
                     updateEVMState();
                     renderCandidatesList();
-                    logEvent(analytics, 'ballot_activated');
+                    if (analytics) logEvent(analytics, 'ballot_activated');
                 }
             });
         }
@@ -338,12 +316,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="cand-num">${cand.id}</div>
                     <div class="cand-name">${escapeHTML(cand.name)}</div>
                     <div class="cand-symbol"><i data-lucide="${cand.symbol}"></i></div>
-                    <div class="vote-btn-wrapper">
-                        <div class="vote-light"></div>
-                        <button class="vote-btn" ${!isBallotActive ? 'disabled' : ''}></button>
-                    </div>
+                    <div class="vote-btn-wrapper"><div class="vote-light"></div><button class="vote-btn" ${!isBallotActive ? 'disabled' : ''}></button></div>
                 `;
-                row.querySelector('.vote-btn').addEventListener('click', () => castVote(cand));
+                const btn = row.querySelector('.vote-btn');
+                if (btn) btn.addEventListener('click', () => castVote(cand));
                 buCandidates.appendChild(row);
             });
             if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -352,12 +328,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const castVote = (candidate) => {
             if (!isBallotActive) return;
             isBallotActive = false;
-            
             const row = document.querySelector(`[data-cand-id="${candidate.id}"]`);
             if (row) row.querySelector('.vote-light').classList.add('active');
             if (buReadyLight) buReadyLight.classList.remove('active');
-            
-            logEvent(analytics, 'vote_cast', { candidate: candidate.name });
+            if (analytics) logEvent(analytics, 'vote_cast', { candidate: candidate.name });
 
             const slip = document.getElementById('vvpat-slip');
             if (slip) {
@@ -365,18 +339,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 slip.querySelector('.slip-name').innerText = candidate.name;
                 slip.querySelector('.slip-symbol-box').innerHTML = `<i data-lucide="${candidate.symbol}"></i>`;
                 if (typeof lucide !== 'undefined') lucide.createIcons();
-
                 setTimeout(() => {
                     slip.classList.add('show');
                     setTimeout(() => {
-                        slip.classList.remove('show');
-                        slip.classList.add('drop');
-                        setTimeout(() => {
-                            isBallotActive = false;
-                            updateEVMState();
-                            renderCandidatesList();
-                            if (activeTab === 'vote') renderVote();
-                        }, 1000);
+                        slip.classList.remove('show'); slip.classList.add('drop');
+                        setTimeout(() => { isBallotActive = false; updateEVMState(); renderCandidatesList(); if (activeTab === 'vote') renderVote(); }, 1000);
                     }, 7000);
                 }, 500);
             }
@@ -386,20 +353,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const switchTab = (tabId) => {
         activeTab = tabId;
-        logEvent(analytics, 'tab_view', { tab_name: tabId });
-        
+        if (analytics) logEvent(analytics, 'tab_view', { tab_name: tabId });
         navButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabId);
             btn.setAttribute('aria-selected', btn.dataset.tab === tabId);
         });
 
-        switch(tabId) {
-            case 'journey': renderJourney(); break;
-            case 'assistant': renderAssistant(); break;
-            case 'vote': renderVote(); break;
-            case 'readiness': renderReadiness(); break;
-            case 'alerts': renderAlerts(); break;
-            default: mainContent.innerHTML = '<h2>Coming Soon</h2>';
+        try {
+            switch(tabId) {
+                case 'journey': renderJourney(); break;
+                case 'assistant': renderAssistant(); break;
+                case 'vote': renderVote(); break;
+                case 'readiness': renderReadiness(); break;
+                case 'alerts': renderAlerts(); break;
+                default: mainContent.innerHTML = '<h2>Coming Soon</h2>';
+            }
+        } catch (e) {
+            console.error(`Render failed for tab ${tabId}`, e);
+            mainContent.innerHTML = '<div class="view-section"><h2>Oops! Something went wrong.</h2></div>';
         }
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
@@ -409,13 +380,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!template) return;
         const modal = template.content.cloneNode(true).querySelector('.modal-overlay');
         document.body.appendChild(modal);
-
         modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
         modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
-    // Global Listeners
     if (profileBtn) profileBtn.addEventListener('click', showProjectInfo);
     
     langButtons.forEach(btn => {
@@ -431,23 +400,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    // RTDB Listener
-    const alertsRef = ref(db, 'live_alerts');
-    onValue(alertsRef, (snapshot) => {
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            const newAlert = Object.values(data).sort((a,b) => b.id - a.id)[0];
-            if (newAlert && !MOCK_ALERTS.find(a => a.id === newAlert.id)) {
-                MOCK_ALERTS.unshift(newAlert);
-                const badge = document.querySelector('.notification-badge');
-                if (badge) {
-                    badge.innerText = parseInt(badge.innerText || 0) + 1;
-                    badge.style.display = 'flex';
+    if (db) {
+        onValue(ref(db, 'live_alerts'), (snapshot) => {
+            if (snapshot.exists()) {
+                const newAlert = Object.values(snapshot.val()).sort((a,b) => b.id - a.id)[0];
+                if (newAlert && !MOCK_ALERTS.find(a => a.id === newAlert.id)) {
+                    MOCK_ALERTS.unshift(newAlert);
+                    const badge = document.querySelector('.notification-badge');
+                    if (badge) { badge.innerText = parseInt(badge.innerText || 0) + 1; badge.style.display = 'flex'; }
+                    if (activeTab === 'alerts') renderAlerts();
                 }
-                if (activeTab === 'alerts') renderAlerts();
             }
-        }
-    });
+        });
+    }
 
     // Init
     updateUIStrings();
