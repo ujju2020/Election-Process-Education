@@ -10,6 +10,19 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#6366f1">
     <link rel="apple-touch-icon" href="icon.png">
+
+    <!-- Social / SEO -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://fleet-bus-494014-q1.web.app/">
+    <meta property="og:title" content="Matdan Sathi - Election Assistant">
+    <meta property="og:description" content="Interactive guide to the Indian election process. Fast, accessible, and offline-ready.">
+    <meta property="og:image" content="https://fleet-bus-494014-q1.web.app/og-image.png">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://fleet-bus-494014-q1.web.app/">
+    <meta property="twitter:title" content="Matdan Sathi - Election Assistant">
+    <meta property="twitter:description" content="Interactive guide to the Indian election process. Fast, accessible, and offline-ready.">
+    <meta property="twitter:image" content="https://fleet-bus-494014-q1.web.app/og-image.png">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,6 +50,11 @@
                 </div>
             </div>
             <div class="header-actions">
+                <div class="lang-selector">
+                    <button class="lang-btn active" data-lang="en">EN</button>
+                    <button class="lang-btn" data-lang="hi">HI</button>
+                    <button class="lang-btn" data-lang="bn">BN</button>
+                </div>
                 <button class="icon-btn search-btn" aria-label="Search">
                     <i data-lucide="search"></i>
                 </button>
@@ -60,6 +78,10 @@
             <button class="nav-item" data-tab="assistant" aria-selected="false">
                 <i data-lucide="message-square"></i>
                 <span>Assistant</span>
+            </button>
+            <button class="nav-item" data-tab="vote" aria-selected="false">
+                <i data-lucide="box"></i>
+                <span>Vote</span>
             </button>
             <button class="nav-item" data-tab="readiness" aria-selected="false">
                 <i data-lucide="check-circle"></i>
@@ -116,6 +138,55 @@
             </div>
             <div class="alerts-list">
                 <!-- Alerts will be injected here -->
+            </div>
+        </section>
+    </template>
+
+    <template id="vote-view-template">
+        <section class="view-section">
+            <div class="section-header">
+                <h2 id="vote-title">Mock Election</h2>
+                <p id="vote-desc">Practice using the EVM & VVPAT</p>
+            </div>
+            <div class="evm-wrapper animate-up">
+                <div class="cu-unit">
+                    <div class="cu-header">CONTROL UNIT</div>
+                    <div class="cu-body">
+                        <div class="cu-display-panel">
+                            <div class="cu-status">
+                                <div class="status-light busy" id="cu-busy-light"></div>
+                                <span>BUSY</span>
+                            </div>
+                        </div>
+                        <button class="ballot-btn" id="ballot-trigger">BALLOT</button>
+                    </div>
+                </div>
+
+                <div class="bu-unit">
+                    <div class="bu-header">
+                        <div class="status-light ready" id="bu-ready-light"></div>
+                        <span>BALLOTING UNIT</span>
+                    </div>
+                    <div class="candidates-grid" id="bu-candidates">
+                        <!-- Candidates injected here -->
+                    </div>
+                </div>
+
+                <div class="vvpat-unit">
+                    <div class="vvpat-header">VVPAT</div>
+                    <div class="vvpat-window">
+                        <div class="vvpat-slip" id="vvpat-slip">
+                            <div class="slip-content">
+                                <div class="slip-symbol-box"></div>
+                                <div class="slip-info">
+                                    <span class="slip-num"></span>
+                                    <span class="slip-name"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="window-glass"></div>
+                    </div>
+                </div>
             </div>
         </section>
     </template>

@@ -1,93 +1,119 @@
 {
-  "journey": [
-    {
-      "id": 1,
-      "title": "Delimitation",
-      "desc": "Constituencies are redrawn to ensure every vote has equal value. This is managed by the Delimitation Commission.",
-      "details": "The boundaries are adjusted based on population changes to maintain fair representation in the Lok Sabha.",
-      "icon": "map"
+  "en": {
+    "ui": {
+      "journey": "Journey",
+      "assistant": "Assistant",
+      "readiness": "Readiness",
+      "alerts": "Live Alerts",
+      "search_placeholder": "Search election info...",
+      "ask_placeholder": "Ask about voting...",
+      "mark_read": "Mark all read",
+      "booth_finder": "Booth Finder",
+      "ready_ballot": "Ready for Ballot",
+      "view_details": "View Details"
     },
-    {
-      "id": 2,
-      "title": "Electoral Rolls",
-      "desc": "The voter list is updated. Being a citizen of 18+ years is the primary eligibility.",
-      "details": "Voters must register via Form 6. The final list is published before polling.",
-      "icon": "users"
+    "journey": [
+      { "id": 1, "title": "Delimitation", "desc": "Geographical boundaries of constituencies are redrawn to ensure equal representation." },
+      { "id": 2, "title": "Electoral Rolls", "desc": "Updating the list of eligible voters. Ensure your name is on the voter list!" },
+      { "id": 3, "title": "Notification", "desc": "Official announcement by the ECI calling for elections and dates." },
+      { "id": 4, "title": "Nominations", "desc": "Candidates file papers. Financial and criminal records are declared via affidavits." },
+      { "id": 5, "title": "Campaigning", "desc": "Parties pitch their vision under the Model Code of Conduct." },
+      { "id": 6, "title": "Polling Day", "desc": "The day citizens cast their votes using Electronic Voting Machines (EVM)." },
+      { "id": 7, "title": "Results", "desc": "Votes are counted under strict supervision and winners are declared." }
+    ],
+    "candidates": [
+      { "id": 1, "name": "Green Earth Party", "symbol": "leaf" },
+      { "id": 2, "name": "Citizen's Rights", "symbol": "scale" },
+      { "id": 3, "name": "Education for All", "symbol": "book-open" },
+      { "id": 4, "name": "Health First", "symbol": "heart" },
+      { "id": 5, "name": "Tech Vision", "symbol": "cpu" }
+    ],
+    "readiness": [
+      { "id": "reg", "title": "Registration Status", "desc": "Is your name on the Electoral Roll?", "action": "Check Online", "url": "https://voters.eci.gov.in/" },
+      { "id": "epic", "title": "Voter ID (EPIC)", "desc": "Do you have a physical or digital EPIC card?", "action": "Download e-EPIC", "url": "https://voters.eci.gov.in/download-epic" },
+      { "id": "booth", "title": "Locate Polling Booth", "desc": "Know where to go on election day.", "action": "Search Booth", "url": "https://electoralsearch.eci.gov.in/pollingstation" }
+    ],
+    "faqs": [
+      { "question": "register", "answer": "Register via Form 6 on the Voter Service Portal or use the Voter Helpline App." },
+      { "question": "vvpat", "answer": "VVPAT provides a paper slip confirming your vote for 7 seconds." }
+    ]
+  },
+  "hi": {
+    "ui": {
+      "journey": "यात्रा",
+      "assistant": "सहायक",
+      "readiness": "तैयारी",
+      "alerts": "लाइव अलर्ट",
+      "search_placeholder": "चुनाव जानकारी खोजें...",
+      "ask_placeholder": "मतदान के बारे में पूछें...",
+      "mark_read": "सभी पढ़े हुए चिह्नित करें",
+      "booth_finder": "बूथ खोजें",
+      "ready_ballot": "मतदान के लिए तैयार",
+      "view_details": "विवरण देखें"
     },
-    {
-      "id": 3,
-      "title": "Scheduling",
-      "desc": "The Election Commission of India (ECI) announces the full timeline for polling phases.",
-      "details": "Includes dates for nominations, scrutiny, withdrawal, and final polling days.",
-      "icon": "calendar"
+    "journey": [
+      { "id": 1, "title": "परिसीमन", "desc": "समान प्रतिनिधित्व सुनिश्चित करने के लिए निर्वाचन क्षेत्रों की सीमाओं का पुनर्निर्धारण।" },
+      { "id": 2, "title": "निर्वाचक नामावली", "desc": "पात्र मतदाताओं की सूची को अद्यतन करना। मतदाता सूची में अपना नाम सुनिश्चित करें!" },
+      { "id": 3, "title": "अधिसूचना", "desc": "चुनाव आयोग द्वारा चुनाव की तारीखों की आधिकारिक घोषणा।" },
+      { "id": 4, "title": "नामांकन", "desc": "उम्मीदवार पत्र दाखिल करते हैं। वित्तीय और आपराधिक रिकॉर्ड हलफनामे के माध्यम से घोषित किए जाते हैं।" },
+      { "id": 5, "title": "चुनाव अभियान", "desc": "पार्टियाँ आदर्श आचार संहिता के तहत अपना दृष्टिकोण प्रस्तुत करती हैं।" },
+      { "id": 6, "title": "मतदान का दिन", "desc": "वह दिन जब नागरिक EVM का उपयोग करके अपना वोट डालते हैं।" },
+      { "id": 7, "title": "परिणाम", "desc": "सख्त निगरानी में वोटों की गिनती की जाती है और विजेताओं की घोषणा की जाती है।" }
+    ],
+    "candidates": [
+      { "id": 1, "name": "ग्रीन अर्थ पार्टी", "symbol": "leaf" },
+      { "id": 2, "name": "नागरिक अधिकार", "symbol": "scale" },
+      { "id": 3, "name": "सभी के लिए शिक्षा", "symbol": "book-open" },
+      { "id": 4, "name": "स्वास्थ्य प्रथम", "symbol": "heart" },
+      { "id": 5, "name": "टेक विजन", "symbol": "cpu" }
+    ],
+    "readiness": [
+      { "id": "reg", "title": "पंजीकरण की स्थिति", "desc": "क्या आपका नाम मतदाता सूची में है?", "action": "ऑनलाइन जांचें", "url": "https://voters.eci.gov.in/" },
+      { "id": "epic", "title": "मतदाता पहचान पत्र (EPIC)", "desc": "क्या आपके पास भौतिक या डिजिटल EPIC कार्ड है?", "action": "डिजिटल डाउनलोड", "url": "https://voters.eci.gov.in/download-epic" },
+      { "id": "booth", "title": "मतदान केंद्र खोजें", "desc": "मतदान के दिन कहां जाना है, यह जानें।", "action": "केंद्र खोजें", "url": "https://electoralsearch.eci.gov.in/pollingstation" }
+    ],
+    "faqs": [
+      { "question": "पंजीकरण", "answer": "वोटर सर्विस पोर्टल पर फॉर्म 6 के माध्यम से पंजीकरण करें या वोटर हेल्पलाइन ऐप का उपयोग करें।" },
+      { "question": "vvpat", "answer": "VVPAT एक पेपर पर्ची प्रदान करता है जो 7 सेकंड के लिए आपके वोट की पुष्टि करती है।" }
+    ]
+  },
+  "bn": {
+    "ui": {
+      "journey": "যাত্রা",
+      "assistant": "সহকারী",
+      "readiness": "প্রস্তুতি",
+      "alerts": "লাইভ অ্যালার্ট",
+      "search_placeholder": "নির্বাচনের তথ্য খুঁজুন...",
+      "ask_placeholder": "ভোট সম্পর্কে জিজ্ঞাসা করুন...",
+      "mark_read": "সব পড়া হয়েছে চিহ্নিত করুন",
+      "booth_finder": "বুথ খুঁজুন",
+      "ready_ballot": "ভোটের জন্য প্রস্তুত",
+      "view_details": "বিস্তারিত দেখুন"
     },
-    {
-      "id": 4,
-      "title": "Nominations",
-      "desc": "Candidates file their papers through the Returning Officer (RO).",
-      "details": "Financial assets, education, and criminal records are declared via affidavits.",
-      "icon": "file-text"
-    },
-    {
-      "id": 5,
-      "title": "Campaigning",
-      "desc": "Parties and candidates pitch their vision to voters under the Model Code of Conduct.",
-      "details": "Campaigning stops 48 hours before the close of polls to ensure a peaceful environment.",
-      "icon": "megaphone"
-    },
-    {
-      "id": 6,
-      "title": "Polling",
-      "desc": "Voters use Electronic Voting Machines (EVMs) with VVPAT for transparency.",
-      "details": "Polling occurs in multiple stages across the country to ensure security.",
-      "icon": "box"
-    },
-    {
-      "id": 7,
-      "title": "Counting & Results",
-      "desc": "Votes are counted under strict supervision, and winners are declared.",
-      "details": "The VVPAT slips are also partially verified to confirm EVM accuracy.",
-      "icon": "award"
-    }
-  ],
-  "readiness": [
-    {
-      "id": "reg",
-      "title": "Registration Status",
-      "desc": "Is your name on the Electoral Roll?",
-      "action": "Check on voters.eci.gov.in"
-    },
-    {
-      "id": "epic",
-      "title": "Voter ID (EPIC Card)",
-      "desc": "Do you have a physical or digital EPIC card?",
-      "action": "Download e-EPIC"
-    },
-    {
-      "id": "booth",
-      "title": "Locate Polling Booth",
-      "desc": "Know where to go on election day.",
-      "action": "Find my booth"
-    },
-    {
-      "id": "docs",
-      "title": "Valid Identity Proof",
-      "desc": "Aadhaar, PAN, or Passport are valid alternatives.",
-      "action": "View list of valid IDs"
-    }
-  ],
-  "faqs": [
-    {
-      "question": "How do I register for the first time?",
-      "answer": "You can fill out Form 6 on the Voter Service Portal or use the Voter Helpline App."
-    },
-    {
-      "question": "What is VVPAT?",
-      "answer": "Voter Verifiable Paper Audit Trail allows you to see a paper slip confirming your vote for 7 seconds."
-    },
-    {
-      "question": "Can I vote if I am an NRI?",
-      "answer": "Yes, NRIs can register as 'Overseas Electors' but must be physically present at the booth to vote."
-    }
-  ]
+    "journey": [
+      { "id": 1, "title": "সীমানা নির্ধারণ", "desc": "সমান প্রতিনিধিত্ব নিশ্চিত করতে নির্বাচনী এলাকার সীমানা পুনর্নির্ধারণ করা হয়।" },
+      { "id": 2, "title": "ভোটার তালিকা", "desc": "যোগ্য ভোটারদের তালিকা আপডেট করা হয়। তালিকায় আপনার নাম আছে কিনা নিশ্চিত করুন!" },
+      { "id": 3, "title": "নির্বাচনী বিজ্ঞপ্তি", "desc": "নির্বাচন কমিশন কর্তৃক নির্বাচনের তারিখ এবং সময়সূচী ঘোষণা করা হয়।" },
+      { "id": 4, "title": "মনোনয়নপত্র জমা", "desc": "প্রার্থীরা হলফনামার মাধ্যমে তাদের আর্থিক ও অপরাধমূলক রেকর্ড ঘোষণা করেন।" },
+      { "id": 5, "title": "নির্বাচনী প্রচার", "desc": "দলগুলো আদর্শ আচরণবিধির আওতায় তাদের দৃষ্টিভঙ্গি তুলে ধরে।" },
+      { "id": 6, "title": "ভোটগ্রহণ", "desc": "নাগরিকরা ইলেকট্রনিক ভোটিং মেশিন (EVM) ব্যবহার করে তাদের ভোট দেন।" },
+      { "id": 7, "title": "ফলাফল ঘোষণা", "desc": "ভোট গণনা করা হয় এবং জয়ী প্রার্থীদের নাম ঘোষণা করা হয়।" }
+    ],
+    "candidates": [
+      { "id": 1, "name": "সবুজ পৃথিবী পার্টি", "symbol": "leaf" },
+      { "id": 2, "name": "নাগরিক অধিকার", "symbol": "scale" },
+      { "id": 3, "name": "সবার জন্য শিক্ষা", "symbol": "book-open" },
+      { "id": 4, "name": "স্বাস্থ্য প্রথম", "symbol": "heart" },
+      { "id": 5, "name": "টেক ভিশন", "symbol": "cpu" }
+    ],
+    "readiness": [
+      { "id": "reg", "title": "নিবন্ধনের অবস্থা", "desc": "ভোটার তালিকায় কি আপনার নাম আছে?", "action": "অনলাইন চেক", "url": "https://voters.eci.gov.in/" },
+      { "id": "epic", "title": "ভোটার আইডি (EPIC)", "desc": "আপনার কি ফিজিক্যাল বা ডিজিটাল EPIC কার্ড আছে?", "action": "ডাউনলোড করুন", "url": "https://voters.eci.gov.in/download-epic" },
+      { "id": "booth", "title": "ভোটকেন্দ্র খুঁজুন", "desc": "ভোটের দিন কোথায় যেতে হবে তা জেনে নিন।", "action": "কেন্দ্র খুঁজুন", "url": "https://electoralsearch.eci.gov.in/pollingstation" }
+    ],
+    "faqs": [
+      { "question": "নিবন্ধন", "answer": "ভোটার সার্ভিস পোর্টালে ফর্ম ৬-এর মাধ্যমে বা ভোটার হেল্পলাইন অ্যাপ ব্যবহার করে নিবন্ধন করুন।" },
+      { "question": "vvpat", "answer": "ভিভিপ্যাট একটি কাগজের স্লিপ প্রদান করে যা ৭ সেকেন্ডের জন্য আপনার ভোটের সত্যতা নিশ্চিত করে।" }
+    ]
+  }
 }

@@ -61,6 +61,7 @@ const ELECTION_STAGES = [
 
 let isInitialLoad = true;
 let appData = null;
+let currentLang = localStorage.getItem('matdan_lang') || 'en';
 
 const MOCK_ALERTS = [
     { id: 1, type: "info", title: "Registration Open", desc: "Last date for voter registration is approaching. Check eci.gov.in", unread: true },
@@ -102,19 +103,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     initFirebase();
     await loadAppData();
     registerSW();
+    updateUIStrings();
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
     const mainContent = document.getElementById('main-content');
     const navButtons = document.querySelectorAll('.nav-item');
+    const langButtons = document.querySelectorAll('.lang-btn');
+
+    function updateUIStrings() {
+        if (!appData || !appData[currentLang]) return;
+        const strings = appData[currentLang].ui;
+        
+        // Update Nav
+        document.querySelector('[data-tab="journey"] span').innerText = strings.journey;
+        document.querySelector('[data-tab="assistant"] span').innerText = strings.assistant;
+        document.querySelector('[data-tab="readiness"] span').innerText = strings.readiness;
+        document.querySelector('[data-tab="alerts"] span').innerText = strings.alerts;
+
+        // Update Search Placeholder (if exists)
+        const searchInput = document.getElementById('chat-input');
+        if (searchInput) searchInput.placeholder = strings.ask_placeholder;
+
+        // Set Active Lang Button
+        langButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === currentLang);
+        });
+    }
 
     const renderJourney = () => {
         const template = document.getElementById('journey-view-template');
         mainContent.innerHTML = '';
         mainContent.appendChild(template.content.cloneNode(true));
         
+        const strings = appData[currentLang].ui;
+        mainContent.querySelector('h2').innerText = strings.journey + ' Journey';
+
         const container = mainContent.querySelector('.timeline-container');
-        const data = (appData && appData.journey) || [];
+        const data = (appData && appData[currentLang].journey) || [];
         
         data.forEach(stage => {
             const card = document.createElement('div');
@@ -137,9 +163,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         mainContent.appendChild(template.content.cloneNode(true));
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
+        const strings = appData[currentLang].ui;
+        chatMessages.querySelector('.msg-bubble').innerText = currentLang === 'bn' ? 'নমস্কার! আমি আপনার নির্বাচনী সহকারী। আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি?' : 
+                                                            currentLang === 'hi' ? 'नमस्ते! मैं आपका चुनाव सहायक हूं। मैं आज आपकी क्या मदद कर सकता हूं?' : 
+                                                            'Namaste! I am your Election Assistant. How can I help you today?';
+        
         const input = document.getElementById('chat-input');
-        const sendBtn = document.querySelector('.send-btn');
-        const chatMessages = document.getElementById('chat-messages');
+        input.placeholder = strings.ask_placeholder;
 
         const sendMessage = () => {
             const text = input.value.trim();
@@ -155,11 +185,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Assistant Logic: Search FAQ data or provide default
             setTimeout(() => {
-                let responseText = `That's a great question about "${escapeHTML(text)}". Generally, the ECI provides updated guidelines on this!`;
+                let responseText = currentLang === 'bn' ? `"${escapeHTML(text)}" সম্পর্কে এটি একটি দুর্দান্ত প্রশ্ন। সাধারণত, নির্বাচন কমিশন এই বিষয়ে নিয়মিত আপডেট দেয়!` :
+                                   currentLang === 'hi' ? `"${escapeHTML(text)}" के बारे में यह एक बेहतरीन सवाल है। आम तौर पर, चुनाव आयोग इस पर अपडेटेड दिशा-निर्देश प्रदान करता है!` :
+                                   `That's a great question about "${escapeHTML(text)}". Generally, the ECI provides updated guidelines on this!`;
                 
-                if (appData && appData.faqs) {
-                    const match = appData.faqs.find(f => 
-                        text.toLowerCase().includes(f.question.toLowerCase().split(' ').slice(-2).join(' ')) ||
+                if (appData && appData[currentLang].faqs) {
+                    const match = appData[currentLang].faqs.find(f => 
+                        text.toLowerCase().includes(f.question.toLowerCase()) ||
                         f.question.toLowerCase().includes(text.toLowerCase())
                     );
                     if (match) responseText = match.answer;
@@ -182,19 +214,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const renderReadiness = () => {
+        const strings = appData[currentLang].ui;
         mainContent.innerHTML = `
             <section class="view-section">
                 <div class="section-header">
-                    <h2>Readiness Checklist</h2>
-                    <p>Ensure you are ready for the ballot</p>
+                    <h2>${strings.readiness} Checklist</h2>
+                    <p>${currentLang === 'bn' ? 'ব্যালটের জন্য আপনি প্রস্তুত কিনা নিশ্চিত করুন' : currentLang === 'hi' ? 'सुनिश्चित करें कि आप मतपत्र के लिए तैयार हैं' : 'Ensure you are ready for the ballot'}</p>
                 </div>
                 <div class="readiness-list timeline-container">
                     <!-- Items will be injected here -->
                 </div>
+                <div class="glass-panel booth-finder-feature animate-up" style="margin-top: 24px; padding: 20px;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 12px;">
+                        <div class="icon-box" style="background: var(--primary); color: white; padding: 10px; border-radius: 10px;">
+                            <i data-lucide="map-pin"></i>
+                        </div>
+                        <h3>${strings.booth_finder}</h3>
+                    </div>
+                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">
+                        ${currentLang === 'bn' ? 'আপনার নির্দিষ্ট ভোটকেন্দ্র এবং বুথের অবস্থান জানতে অফিসিয়াল পোর্টাল ব্যবহার করুন।' : 
+                          currentLang === 'hi' ? 'अपने विशेष मतदान केंद्र और बूथ की स्थिति जानने के लिए आधिकारिक पोर्टल का उपयोग करें।' : 
+                          'Use the official portal to find your dedicated polling station and booth location.'}
+                    </p>
+                    <a href="https://electoralsearch.eci.gov.in/pollingstation" target="_blank" class="primary-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        <span>${strings.view_details}</span>
+                        <i data-lucide="external-link" style="width: 14px;"></i>
+                    </a>
+                </div>
             </section>
         `;
         const container = mainContent.querySelector('.readiness-list');
-        const data = (appData && appData.readiness) || [];
+        const data = (appData && appData[currentLang].readiness) || [];
 
         data.forEach(item => {
             const card = document.createElement('div');
@@ -208,17 +258,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <span class="text-btn" style="margin-top:8px; display:inline-block">${escapeHTML(item.action)}</span>
                 </div>
             `;
-            card.addEventListener('click', () => alert(`Action: ${item.action}`));
+            card.addEventListener('click', () => {
+                if (item.url) window.open(item.url, '_blank');
+                else alert(`Action: ${item.action}`);
+            });
             container.appendChild(card);
         });
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
     const renderAlerts = () => {
+        const strings = appData[currentLang].ui;
         const template = document.getElementById('alerts-view-template');
         mainContent.innerHTML = '';
         mainContent.appendChild(template.content.cloneNode(true));
         
+        mainContent.querySelector('h2').innerText = strings.alerts;
+        mainContent.querySelector('.text-btn').innerText = strings.mark_read;
+
         const container = mainContent.querySelector('.alerts-list');
         MOCK_ALERTS.forEach(alert => {
             const card = document.createElement('div');
@@ -236,7 +293,102 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
-    const switchTab = (tabId) => {
+    let isBallotActive = false;
+    const renderVote = () => {
+        const template = document.getElementById('vote-view-template');
+        mainContent.innerHTML = '';
+        mainContent.appendChild(template.content.cloneNode(true));
+
+        const candidates = (appData && appData[currentLang].candidates) || [];
+
+        const buCandidates = document.getElementById('bu-candidates');
+        const cuBusyLight = document.getElementById('cu-busy-light');
+        const buReadyLight = document.getElementById('bu-ready-light');
+        const ballotBtn = document.getElementById('ballot-trigger');
+
+        const updateEVMState = () => {
+            if (isBallotActive) {
+                cuBusyLight.classList.remove('active');
+                buReadyLight.classList.add('active');
+            } else {
+                cuBusyLight.classList.add('active');
+                buReadyLight.classList.remove('active');
+            }
+        };
+        updateEVMState();
+
+        ballotBtn.addEventListener('click', () => {
+            if (!isBallotActive) {
+                isBallotActive = true;
+                updateEVMState();
+                renderCandidates();
+                logEvent(analytics, 'ballot_activated');
+            }
+        });
+
+        const castVote = (candidate) => {
+            if (!isBallotActive) return;
+            isBallotActive = false;
+            
+            // UI Feedback
+            const row = document.querySelector(`[data-cand-id="${candidate.id}"]`);
+            row.querySelector('.vote-light').classList.add('active');
+            buReadyLight.classList.remove('active');
+            
+            logEvent(analytics, 'vote_cast', { candidate: candidate.name });
+
+            // VVPAT Sequence
+            const slip = document.getElementById('vvpat-slip');
+            slip.querySelector('.slip-num').innerText = `ID: ${candidate.id}`;
+            slip.querySelector('.slip-name').innerText = candidate.name;
+            slip.querySelector('.slip-symbol-box').innerHTML = `<i data-lucide="${candidate.symbol}"></i>`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            setTimeout(() => {
+                slip.classList.add('show');
+                
+                // Beep/End Sequence after 7 seconds
+                setTimeout(() => {
+                    slip.classList.remove('show');
+                    slip.classList.add('drop');
+                    
+                    setTimeout(() => {
+                        isBallotActive = false;
+                        updateEVMState();
+                        renderCandidates(); // Reset buttons
+                        if (activeTab === 'vote') renderVote(); // Refresh view
+                    }, 1000);
+                }, 7000);
+            }, 500);
+        };
+
+        const renderCandidates = () => {
+            buCandidates.innerHTML = '';
+            candidates.forEach(cand => {
+                const row = document.createElement('div');
+                row.className = 'candidate-row';
+                row.dataset.candId = cand.id;
+                row.innerHTML = `
+                    <div class="cand-num">${cand.id}</div>
+                    <div class="cand-name">${escapeHTML(cand.name)}</div>
+                    <div class="cand-symbol"><i data-lucide="${cand.symbol}"></i></div>
+                    <div class="vote-btn-wrapper">
+                        <div class="vote-light"></div>
+                        <button class="vote-btn" ${!isBallotActive ? 'disabled' : ''}></button>
+                    </div>
+                `;
+                
+                const btn = row.querySelector('.vote-btn');
+                btn.addEventListener('click', () => castVote(cand));
+                buCandidates.appendChild(row);
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+
+        renderCandidates();
+    };
+
+    let activeTab = 'journey';
         logEvent(analytics, 'tab_view', { tab_name: tabId });
         navButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabId);
@@ -250,6 +402,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         switch(tabId) {
             case 'journey': renderJourney(); break;
             case 'assistant': renderAssistant(); break;
+            case 'vote': renderVote(); break;
             case 'readiness': renderReadiness(); break;
             case 'alerts': renderAlerts(); break;
             default: mainContent.innerHTML = '<div class="view-section"><h2>Coming Soon</h2></div>';
@@ -263,27 +416,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     const searchBtn = document.querySelector('.search-btn');
     if (searchBtn) {
         searchBtn.addEventListener('click', () => {
-            const query = prompt('Search election information:');
+            const strings = appData[currentLang].ui;
+            const query = prompt(strings.search_placeholder);
             if (!query) return;
             
             logEvent(analytics, 'search_performed', { query });
 
             // Search in journey and faqs
             let match = null;
-            if (appData) {
-                match = appData.journey.find(s => s.title.toLowerCase().includes(query.toLowerCase()));
-                if (!match && appData.faqs) {
-                    match = appData.faqs.find(f => f.question.toLowerCase().includes(query.toLowerCase()));
+            if (appData && appData[currentLang]) {
+                match = appData[currentLang].journey.find(s => s.title.toLowerCase().includes(query.toLowerCase()));
+                if (!match && appData[currentLang].faqs) {
+                    match = appData[currentLang].faqs.find(f => f.question.toLowerCase().includes(query.toLowerCase()));
                 }
             }
 
             if (match) {
                 alert(`Search Match: ${match.title || match.question}\n\n${match.desc || match.answer}`);
             } else {
-                alert('No exact match found. Try searching for "Voting", "Registration", or "EVM".');
+                alert(currentLang === 'bn' ? 'সঠিক মিল খুঁজে পাওয়া যায়নি।' : currentLang === 'hi' ? 'कोई सटीक मिलान नहीं मिला।' : 'No exact match found.');
             }
         });
     }
+
+    // Language Switching Logic
+    langButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentLang = btn.dataset.lang;
+            localStorage.setItem('matdan_lang', currentLang);
+            updateUIStrings();
+            
+            // Re-render current tab
+            const activeTab = document.querySelector('.nav-item.active').dataset.tab;
+            switchTab(activeTab);
+        });
+    });
 
     // Live Alerts from Firebase RTDB
     const alertsRef = ref(db, 'live_alerts');

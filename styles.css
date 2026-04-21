@@ -104,7 +104,34 @@ h1, h2, h3, .brand-text {
 
 .header-actions {
     display: flex;
-    gap: 8px;
+    gap: 12px;
+    align-items: center;
+}
+
+.lang-selector {
+    display: flex;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 3px;
+}
+
+.lang-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lang-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .icon-btn {
@@ -294,6 +321,204 @@ h1, h2, h3, .brand-text {
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+/* EVM Simulation */
+.evm-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 10px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.cu-unit, .bu-unit, .vvpat-unit {
+    background: #e5e7eb;
+    border: 4px solid #9ca3af;
+    border-radius: 12px;
+    box-shadow: inset 0 2px 10px rgba(255,255,255,0.5), 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.cu-header, .bu-header, .vvpat-header {
+    background: #4b5563;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 12px;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+/* Control Unit */
+.cu-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.cu-display-panel {
+    background: #1f2937;
+    width: 100%;
+    height: 60px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #374151;
+}
+
+.cu-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #9ca3af;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-light {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #374151;
+    border: 2px solid #111827;
+}
+
+.status-light.active.busy { background: #ef4444; box-shadow: 0 0 15px #ef4444; }
+.status-light.active.ready { background: #22c55e; box-shadow: 0 0 15px #22c55e; }
+
+.ballot-btn {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #1D4ED8;
+    transition: all 0.1s;
+}
+
+.ballot-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #1D4ED8;
+}
+
+/* Balloting Unit */
+.candidates-grid {
+    background: white;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.candidate-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 60px 60px;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: -1px;
+}
+
+.cand-num { font-weight: 700; color: #6b7280; }
+.cand-name { font-weight: 600; color: #1f2937; padding-left: 10px; }
+.cand-symbol { font-size: 1.5rem; text-align: center; }
+
+.vote-btn-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.vote-btn {
+    width: 44px;
+    height: 34px;
+    background: #3b82f6;
+    border: 1px solid #1d4ed8;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #1d4ed8;
+    transition: all 0.1s;
+}
+
+.vote-btn:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #1d4ed8;
+}
+
+.vote-btn:disabled {
+    background: #9ca3af;
+    border-color: #6b7280;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.vote-light {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #fee2e2;
+}
+
+.vote-light.active {
+    background: #ef4444;
+    box-shadow: 0 0 10px #ef4444;
+}
+
+/* VVPAT */
+.vvpat-window {
+    height: 140px;
+    background: #374151;
+    position: relative;
+    overflow: hidden;
+    margin: 15px;
+    border-radius: 6px;
+    border: 4px solid #1f2937;
+}
+
+.vvpat-slip {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 80px;
+    background: white;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vvpat-slip.show { top: 15px; }
+.vvpat-slip.drop { top: 150px; opacity: 0; }
+
+.slip-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    height: 100%;
+}
+
+.slip-symbol-box { font-size: 2rem; }
+.slip-info { display: flex; flex-direction: column; }
+.slip-num { font-weight: 700; font-size: 0.8rem; color: #6b7280; }
+.slip-name { font-weight: 700; font-size: 0.9rem; color: #111827; }
+
+.window-glass {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%);
+    pointer-events: none;
+}
+
+@media (max-width: 480px) {
+    .candidate-row { grid-template-columns: 30px 1fr 40px 50px; font-size: 0.85rem; }
 }
 
 .assistant-msg {

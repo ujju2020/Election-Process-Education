@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Matdan Sathi</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .admin-login-panel {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 30px;
+            text-align: center;
+        }
+        .admin-main {
+            display: none;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: white;
+            font-family: inherit;
+        }
+        .alert-preview {
+            margin-top: 30px;
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body class="admin-body">
+    <div class="app-container">
+        <!-- Auth Panel -->
+        <div id="auth-panel" class="admin-login-panel glass-panel animate-up">
+            <i data-lucide="shield-check" style="width: 48px; height: 48px; color: var(--primary); margin-bottom: 20px;"></i>
+            <h2>Admin Login</h2>
+            <p style="margin-bottom: 24px; color: var(--text-muted);">Enter password to broadcast alerts</p>
+            <input type="password" id="admin-pass" placeholder="Enter Password">
+            <button id="login-btn" class="primary-btn" style="width: 100%; margin-top: 20px;">Unlock Dashboard</button>
+        </div>
+
+        <!-- Dashboard Panel -->
+        <div id="dashboard-panel" class="admin-main animate-up">
+            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
+                <h1>Alert Broadcast</h1>
+                <button class="text-btn" onclick="location.href='index.html'">View Site</button>
+            </header>
+
+            <div class="glass-panel" style="padding: 30px;">
+                <div class="form-group">
+                    <label>Alert Type</label>
+                    <select id="alert-type">
+                        <option value="info">Information (Blue)</option>
+                        <option value="warning">Warning (Yellow/Red)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Headline</label>
+                    <input type="text" id="alert-title" placeholder="e.g., Heavy Rain Warning">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="alert-desc" rows="4" placeholder="Enter full details..."></textarea>
+                </div>
+                <button id="broadcast-btn" class="primary-btn" style="width: 100%;">
+                    <i data-lucide="send"></i>
+                    <span>Broadcast to All Users</span>
+                </button>
+            </div>
+
+            <div id="status-msg" style="margin-top: 20px; text-align: center; font-weight: 600;"></div>
+        </div>
+    </div>
+
+    <script type="module" src="admin-app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+    </script>
+</body>
+</html>
