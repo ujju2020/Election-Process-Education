@@ -6,11 +6,13 @@ Matdan Sathi is a premium, interactive web application designed to educate citiz
 
 ## 🌟 Key Features
 
+- **Multi-Language Support**: Full localized interface and educational content for **English**, **Hindi**, and **Bengali**.
 - **Interactive Election Journey**: A visual timeline of the 7 critical stages of the Indian election process.
+- **Mock Voting Simulation**: A realistic practice interface for using the **Electronic Voting Machine (EVM)** and **VVPAT** (Voter Verifiable Paper Audit Trail).
 - **Intelligent Guided Assistant**: A chatbot-style interface to answer FAQs about voting and registration.
-- **Voter Readiness Checklist**: Actionable steps and document requirements (EPIC, Aadhaar, etc.) for voters.
-- **Live Cloud Alerts**: Real-time synchronization with Firebase for critical election-day updates.
-- **PWA Support**: Full offline access and installable on mobile/desktop devices.
+- **Voter Readiness Checklist**: Actionable steps, document requirements, and integrated **Polling Booth Finder**.
+- **Admin Dashboard**: A secure portal for administrators to broadcast real-time alerts to all users.
+- **PWA Support**: Full offline access and installable on modern mobile and desktop devices.
 
 ## 🛠️ Technology Stack
 
@@ -18,11 +20,11 @@ Matdan Sathi is a premium, interactive web application designed to educate citiz
 - **Styling**: Modern CSS3 featuring Glassmorphism, Vibrant Gradients, and Fluid Typography.
 - **Backend & Services (Google Firebase)**:
     - **Hosting**: Global CDN deployment for ultra-fast performance.
-    - **Realtime Database**: Live syncing for election alerts.
-    - **Authentication**: Anonymous sign-in for engagement tracking.
-    - **Analytics**: User interaction logging via `logEvent`.
-    - **Performance & Remote Config**: Real-time app monitoring and configuration.
-- **Testing**: Built-in test suite using `node:test` and `node:assert`.
+    - **Realtime Database**: Live syncing for election alerts and broadcasts.
+    - **Authentication**: Anonymous sign-in for security and tracking.
+    - **Analytics**: Comprehensive user interaction logging via `logEvent`.
+    - **Performance & Remote Config**: Real-time app monitoring and assistant persona configuration.
+- **Testing**: Robust test suite using `node:test` and `node:assert`.
 
 ## 📈 Quality Criteria
 
@@ -32,7 +34,7 @@ This project strictly adheres to the following standards:
 3. **Efficiency**: Non-blocking service initialization and optimized assets for the Spark Plan.
 4. **Testing**: Comprehensive unit tests for security and data integrity logic.
 5. **Accessibility**: High-contrast design, ARIA labels, and Lucide icons for maximum visibility.
-6. **Google Services**: Deep integration across the full Firebase ecosystem.
+6. **SEO & Social**: Optimized OpenGraph meta tags and custom preview imagery for professional sharing.
 
 ## 🚀 Getting Started
 
@@ -40,6 +42,9 @@ This project strictly adheres to the following standards:
 1. Clone the repository.
 2. Run `npm test` to verify the logic.
 3. Open `index.html` in any modern browser.
+
+### Admin Access
+The admin dashboard is available at `/admin.html`. Access requires a secure password for broadcasting live alerts to the user base.
 
 ### Deployment
 The project is configured for **Firebase Hosting**. To deploy updates:
