@@ -1,19 +1,18 @@
 /* 
  * Matdan Sathi - Election Process Education Assistant
- * Developer - Ujjwal Kumar Bhowmick (ujjwalkumarbhowmick30@gmail.com)
+ * Robust Recovery Module
  */
+console.log("[MatdanSathi] Script starting...");
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getPerformance, trace } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-performance.js";
-import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-remote-config.js";
+import { getRemoteConfig, fetchAndActivate } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-remote-config.js";
 
-window.onerror = (msg, url, line, col, error) => {
-    console.error(`[App Error] ${msg} at ${line}:${col}.`);
-    return false;
-};
+// Global Debugger
+window.MATDAN_DEBUG = true;
 
 const firebaseConfig = {
     apiKey: "AIzaSy_PLACEHOLDER_KEY", 
@@ -25,31 +24,22 @@ const firebaseConfig = {
     appId: "PLACEHOLDER"
 };
 
-let analytics, db, auth, perf, remoteConfig;
+let analytics, db, auth;
 try {
     const app = initializeApp(firebaseConfig);
-    analytics = getAnalytics(app);
     db = getDatabase(app);
     auth = getAuth(app);
-    perf = getPerformance(app);
-    remoteConfig = getRemoteConfig(app);
+    analytics = getAnalytics(app);
+    console.log("[MatdanSathi] Firebase Initialized (partial check)");
 } catch (e) {
-    console.warn("Firebase failed.");
+    console.warn("[MatdanSathi] Firebase error:", e.message);
 }
 
 let appData = null;
 let currentLang = localStorage.getItem('matdan_lang') || 'en';
 let activeTab = 'journey';
 
-const MOCK_ALERTS = [
-    { id: 1, type: "info", title: "Registration Open", desc: "Check eci.gov.in", unread: true },
-    { id: 2, type: "warning", title: "Code of Conduct", desc: "Model Code of Conduct is in effect.", unread: false }
-];
-
-const FALLBACK_STRINGS = {
-    journey: "Journey", assistant: "Assistant", vote: "Vote", readiness: "Readiness", alerts: "Alerts",
-    ask_placeholder: "Ask about voting...", booth_finder: "Booth Finder", view_details: "View Details", mark_read: "Mark Read"
-};
+const FALLBACK_UI = { journey: "Journey", assistant: "Assistant", vote: "Vote", readiness: "Readiness", alerts: "Alerts", ask_placeholder: "Ask about voting...", booth_finder: "Booth Finder", view_details: "View Details" };
 
 function escapeHTML(str) {
     if (typeof str !== 'string') return str || '';
@@ -58,226 +48,167 @@ function escapeHTML(str) {
 
 async function loadAppData() {
     try {
-        const response = await fetch('data.json');
-        if (!response.ok) throw new Error('Data load failed');
-        appData = await response.json();
+        const r = await fetch('data.json');
+        if (!r.ok) throw new Error("404 data.json");
+        appData = await r.json();
+        console.log("[MatdanSathi] Data loaded");
     } catch (e) {
-        console.error('Data error:', e);
+        console.error("[MatdanSathi] loadAppData failed", e);
     }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const initFirebase = async () => {
-        if (!auth) return;
-        try {
-            await signInAnonymously(auth);
-            if (analytics) logEvent(analytics, 'app_open');
-            if (remoteConfig) await fetchAndActivate(remoteConfig);
-        } catch (e) {}
+// Global functions to ensure visibility
+window.switchTab = (tabId) => {
+    console.log("[MatdanSathi] Switching to:", tabId);
+    activeTab = tabId;
+    const navButtons = document.querySelectorAll('.nav-item');
+    const mainContent = document.getElementById('main-content');
+    
+    navButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabId);
+        btn.setAttribute('aria-selected', btn.dataset.tab === tabId);
+    });
+
+    try {
+        if (tabId === 'journey') renderJourney(mainContent);
+        else if (tabId === 'assistant') renderAssistant(mainContent);
+        else if (tabId === 'vote') renderVote(mainContent);
+        else if (tabId === 'readiness') renderReadiness(mainContent);
+        else if (tabId === 'alerts') renderAlerts(mainContent);
+    } catch (e) {
+        console.error("[MatdanSathi] Render failed", e);
+        mainContent.innerHTML = "<h2>Render Error</h2>";
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+function getUI() { return appData?.[currentLang]?.ui || FALLBACK_UI; }
+
+function renderJourney(container) {
+    const t = document.getElementById('journey-view-template');
+    if (!t) return;
+    container.innerHTML = '';
+    container.appendChild(t.content.cloneNode(true));
+    const ui = getUI();
+    const h2 = container.querySelector('h2');
+    if (h2) h2.innerText = (ui.journey || 'Election') + ' Journey';
+    const list = container.querySelector('.timeline-container');
+    const data = appData?.[currentLang]?.journey || [];
+    data.forEach(s => {
+        const c = document.createElement('div');
+        c.className = 'timeline-card animate-up';
+        c.innerHTML = `<div class="step-num">${s.id}</div><div class="step-content"><h3>${escapeHTML(s.title)}</h3><p>${escapeHTML(s.desc)}</p></div>`;
+        list.appendChild(c);
+    });
+}
+
+function renderAssistant(container) {
+    const t = document.getElementById('assistant-view-template');
+    if (!t) return;
+    container.innerHTML = '';
+    container.appendChild(t.content.cloneNode(true));
+    const ui = getUI();
+    const input = document.getElementById('chat-input');
+    if (input) input.placeholder = ui.ask_placeholder;
+    const btn = container.querySelector('.send-btn');
+    if (btn) btn.onclick = () => {
+        const text = input.value.trim();
+        if (!text) return;
+        const msg = document.createElement('div');
+        msg.className = 'user-msg assistant-msg animate-up';
+        msg.innerHTML = `<div class="msg-bubble">${escapeHTML(text)}</div>`;
+        document.getElementById('chat-messages').appendChild(msg);
+        input.value = '';
+        setTimeout(() => {
+            const bot = document.createElement('div');
+            bot.className = 'assistant-msg animate-up';
+            bot.innerHTML = `<div class="avatar"><i data-lucide="bot"></i></div><div class="msg-bubble">Thank you.</div>`;
+            document.getElementById('chat-messages').appendChild(bot);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }, 800);
     };
-    initFirebase();
+}
+
+function renderReadiness(container) {
+    const ui = getUI();
+    container.innerHTML = `<section class="view-section"><h2>${ui.readiness}</h2><div class="readiness-list timeline-container"></div><a href="https://voters.eci.gov.in/" target="_blank" class="primary-btn" style="margin-top:20px; text-decoration:none; display:inline-block; padding:12px 20px; background:var(--primary); border-radius:10px; color:white;">Check Portal</a></section>`;
+    const list = container.querySelector('.readiness-list');
+    const data = appData?.[currentLang]?.readiness || [];
+    data.forEach(i => {
+        const c = document.createElement('div');
+        c.className = 'timeline-card animate-up';
+        c.innerHTML = `<div class="step-num"><i data-lucide="check"></i></div><div class="step-content"><h3>${escapeHTML(i.title)}</h3><p>${escapeHTML(i.desc)}</p></div>`;
+        list.appendChild(c);
+    });
+}
+
+function renderAlerts(container) {
+    const t = document.getElementById('alerts-view-template');
+    if (!t) return;
+    container.innerHTML = '';
+    container.appendChild(t.content.cloneNode(true));
+}
+
+let isBallotActive = false;
+function renderVote(container) {
+    const t = document.getElementById('vote-view-template');
+    if (!t) return;
+    container.innerHTML = '';
+    container.appendChild(t.content.cloneNode(true));
+    const bu = document.getElementById('bu-candidates');
+    const ballot = document.getElementById('ballot-trigger');
+    const update = () => {
+        document.getElementById('cu-busy-light')?.classList.toggle('active', !isBallotActive);
+        document.getElementById('bu-ready-light')?.classList.toggle('active', isBallotActive);
+    };
+    const showList = () => {
+        if (!bu) return;
+        bu.innerHTML = '';
+        (appData?.[currentLang]?.candidates || [{id:1,name:"Demo",symbol:"leaf"}]).forEach(c => {
+            const r = document.createElement('div');
+            r.className = 'candidate-row';
+            r.innerHTML = `<div class="cand-num">${c.id}</div><div class="cand-name">${escapeHTML(c.name)}</div><div class="cand-symbol"><i data-lucide="${c.symbol}"></i></div><div class="vote-btn-wrapper"><button class="vote-btn" ${!isBallotActive ? 'disabled' : ''}></button></div>`;
+            r.querySelector('.vote-btn').onclick = () => {
+                isBallotActive = false;
+                const s = document.getElementById('vvpat-slip');
+                if (s) { s.querySelector('.slip-name').innerText = c.name; s.classList.add('show'); setTimeout(() => { s.classList.remove('show'); s.classList.add('drop'); update(); showList(); window.switchTab('vote'); }, 3000); }
+            };
+            bu.appendChild(r);
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    };
+    if (ballot) ballot.onclick = () => { isBallotActive = true; update(); showList(); };
+    update(); showList();
+}
+
+// Final Initialization
+console.log("[MatdanSathi] Registering DOMContentLoaded...");
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log("[MatdanSathi] DOM Ready");
     await loadAppData();
     
-    const mainContent = document.getElementById('main-content');
-    const navButtons = document.querySelectorAll('.nav-item');
-    const langButtons = document.querySelectorAll('.lang-btn');
-    const profileBtn = document.querySelector('.profile-btn');
+    // UI strings update
+    const ui = getUI();
+    const map = { journey: ui.journey, assistant: ui.assistant, vote: ui.vote || 'Vote', readiness: ui.readiness, alerts: ui.alerts };
+    Object.entries(map).forEach(([k, v]) => {
+        const s = document.querySelector(`[data-tab="${k}"] span`);
+        if (s) s.innerText = v;
+    });
 
-    const getStrings = () => appData?.[currentLang]?.ui || FALLBACK_STRINGS;
-
-    function updateUIStrings() {
-        const strings = getStrings();
-        const navMap = { journey: strings.journey, assistant: strings.assistant, vote: strings.vote || 'Vote', readiness: strings.readiness, alerts: strings.alerts };
-        Object.entries(navMap).forEach(([tab, text]) => {
-            const span = document.querySelector(`[data-tab="${tab}"] span`);
-            if (span) span.innerText = text;
-        });
-        langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === currentLang));
-    }
-
-    const renderJourney = () => {
-        const template = document.getElementById('journey-view-template');
-        if (!template || !mainContent) return;
-        mainContent.innerHTML = '';
-        mainContent.appendChild(template.content.cloneNode(true));
-        const strings = getStrings();
-        const h2 = mainContent.querySelector('h2');
-        if (h2) h2.innerText = (strings.journey || 'Election') + ' Journey';
-        const container = mainContent.querySelector('.timeline-container');
-        const data = appData?.[currentLang]?.journey || [];
-        data.forEach(s => {
-            const card = document.createElement('div');
-            card.className = 'timeline-card animate-up';
-            card.innerHTML = `<div class="step-num">${s.id}</div><div class="step-content"><h3>${escapeHTML(s.title)}</h3><p>${escapeHTML(s.desc)}</p></div>`;
-            if (container) container.appendChild(card);
-        });
+    // Event listeners
+    document.querySelectorAll('.nav-item').forEach(b => b.onclick = () => window.switchTab(b.dataset.tab));
+    document.querySelectorAll('.lang-btn').forEach(b => b.onclick = () => { currentLang = b.dataset.lang; localStorage.setItem('matdan_lang', currentLang); window.switchTab(activeTab); });
+    
+    const pb = document.querySelector('.profile-btn');
+    if (pb) pb.onclick = () => {
+        const t = document.getElementById('info-modal-template');
+        if (!t) return;
+        const m = t.content.cloneNode(true).querySelector('.modal-overlay');
+        document.body.appendChild(m);
+        m.querySelector('.close-modal').onclick = () => m.remove();
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
-    const renderAssistant = () => {
-        const template = document.getElementById('assistant-view-template');
-        if (!template || !mainContent) return;
-        mainContent.innerHTML = '';
-        mainContent.appendChild(template.content.cloneNode(true));
-        const chatMessages = document.getElementById('chat-messages');
-        const input = document.getElementById('chat-input');
-        const sendBtn = mainContent.querySelector('.send-btn');
-        const strings = getStrings();
-        if (input) input.placeholder = strings.ask_placeholder;
-        if (chatMessages) {
-            const welcome = currentLang === 'bn' ? 'নমস্কার! আমী কিভাবে সাহায্য করতে পারি?' : currentLang === 'hi' ? 'नमस्ते! मैं आपकी कैसे मदद कर सकता हूं?' : 'Namaste! How can I help you?';
-            const bubble = chatMessages.querySelector('.msg-bubble');
-            if (bubble) bubble.innerText = welcome;
-        }
-        const sendMessage = () => {
-            const text = input.value.trim();
-            if (!text || !chatMessages) return;
-            const userMsg = document.createElement('div');
-            userMsg.className = 'user-msg assistant-msg animate-up';
-            userMsg.innerHTML = `<div class="msg-bubble">${escapeHTML(text)}</div>`;
-            chatMessages.appendChild(userMsg);
-            input.value = '';
-            if (analytics) logEvent(analytics, 'assistant_query', { query: text });
-            setTimeout(() => {
-                let resp = currentLang === 'bn' ? 'ধন্যবাদ।' : currentLang === 'hi' ? 'धन्यवाद।' : 'Thank you for asking.';
-                const faqs = appData?.[currentLang]?.faqs || [];
-                const match = faqs.find(f => text.toLowerCase().includes(f.question.toLowerCase()) || f.question.toLowerCase().includes(text.toLowerCase()));
-                if (match) resp = match.answer;
-                const botMsg = document.createElement('div');
-                botMsg.className = 'assistant-msg animate-up';
-                botMsg.innerHTML = `<div class="avatar"><i data-lucide="bot"></i></div><div class="msg-bubble">${escapeHTML(resp)}</div>`;
-                chatMessages.appendChild(botMsg);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-            }, 800);
-        };
-        if (sendBtn) sendBtn.addEventListener('click', sendMessage);
-        if (input) input.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    };
-
-    const renderReadiness = () => {
-        const strings = getStrings();
-        mainContent.innerHTML = `<section class="view-section"><div class="section-header"><h2>${strings.readiness} Checklist</h2></div><div class="readiness-list timeline-container"></div><div class="booth-finder-feature animate-up" style="margin-top:24px"><a href="https://electoralsearch.eci.gov.in/pollingstation" target="_blank" class="primary-btn"><span>${strings.booth_finder}</span></a></div></section>`;
-        const container = mainContent.querySelector('.readiness-list');
-        const data = appData?.[currentLang]?.readiness || [];
-        data.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'timeline-card animate-up';
-            card.innerHTML = `<div class="step-num"><i data-lucide="check"></i></div><div class="step-content"><h3>${escapeHTML(item.title)}</h3><p>${escapeHTML(item.desc)}</p><span class="text-btn">${escapeHTML(item.action)}</span></div>`;
-            card.addEventListener('click', () => item.url && window.open(item.url, '_blank'));
-            if (container) container.appendChild(card);
-        });
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    };
-
-    const renderAlerts = () => {
-        const template = document.getElementById('alerts-view-template');
-        if (!template || !mainContent) return;
-        mainContent.innerHTML = '';
-        mainContent.appendChild(template.content.cloneNode(true));
-        const strings = getStrings();
-        const container = mainContent.querySelector('.alerts-list');
-        MOCK_ALERTS.forEach(a => {
-            const card = document.createElement('div');
-            card.className = `alert-card glass-panel ${a.unread ? 'unread' : ''}`;
-            card.innerHTML = `<div class="alert-icon ${a.type}"><i data-lucide="${a.type === 'warning' ? 'alert-triangle' : 'info'}"></i></div><div class="alert-content"><h4>${escapeHTML(a.title)}</h4><p>${escapeHTML(a.desc)}</p></div>`;
-            if (container) container.appendChild(card);
-        });
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    };
-
-    let isBallotActive = false;
-    const renderVote = () => {
-        const template = document.getElementById('vote-view-template');
-        if (!template || !mainContent) return;
-        mainContent.innerHTML = '';
-        mainContent.appendChild(template.content.cloneNode(true));
-        const buCandidates = document.getElementById('bu-candidates');
-        const cuBusyLight = document.getElementById('cu-busy-light');
-        const buReadyLight = document.getElementById('bu-ready-light');
-        const ballotBtn = document.getElementById('ballot-trigger');
-        const updateEVM = () => {
-            if (cuBusyLight) cuBusyLight.classList.toggle('active', !isBallotActive);
-            if (buReadyLight) buReadyLight.classList.toggle('active', isBallotActive);
-        };
-        const renderList = () => {
-            if (!buCandidates) return;
-            buCandidates.innerHTML = '';
-            (appData?.[currentLang]?.candidates || []).forEach(cand => {
-                const row = document.createElement('div');
-                row.className = 'candidate-row';
-                row.innerHTML = `<div class="cand-num">${cand.id}</div><div class="cand-name">${escapeHTML(cand.name)}</div><div class="cand-symbol"><i data-lucide="${cand.symbol}"></i></div><div class="vote-btn-wrapper"><div class="vote-light" id="vl-${cand.id}"></div><button class="vote-btn" ${!isBallotActive ? 'disabled' : ''}></button></div>`;
-                row.querySelector('.vote-btn').addEventListener('click', () => castVote(cand));
-                buCandidates.appendChild(row);
-            });
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        };
-        const castVote = (candidate) => {
-            if (!isBallotActive) return;
-            isBallotActive = false;
-            document.getElementById(`vl-${candidate.id}`)?.classList.add('active');
-            if (buReadyLight) buReadyLight.classList.remove('active');
-            const slip = document.getElementById('vvpat-slip');
-            if (slip) {
-                slip.querySelector('.slip-name').innerText = candidate.name;
-                slip.classList.add('show');
-                setTimeout(() => {
-                    slip.classList.remove('show'); slip.classList.add('drop');
-                    setTimeout(() => { updateEVM(); renderList(); if (activeTab === 'vote') renderVote(); }, 1000);
-                }, 7000);
-            }
-        };
-        updateEVM();
-        renderList();
-        if (ballotBtn) ballotBtn.addEventListener('click', () => { if (!isBallotActive) { isBallotActive = true; updateEVM(); renderList(); } });
-    };
-
-    const switchTab = (tabId) => {
-        activeTab = tabId;
-        navButtons.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tab === tabId);
-            btn.setAttribute('aria-selected', btn.dataset.tab === tabId);
-        });
-        switch(tabId) {
-            case 'journey': renderJourney(); break;
-            case 'assistant': renderAssistant(); break;
-            case 'vote': renderVote(); break;
-            case 'readiness': renderReadiness(); break;
-            case 'alerts': renderAlerts(); break;
-            default: mainContent.innerHTML = '<h2>Coming Soon</h2>';
-        }
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    };
-
-    const showProjectInfo = () => {
-        const template = document.getElementById('info-modal-template');
-        if (!template) return;
-        const modal = template.content.cloneNode(true).querySelector('.modal-overlay');
-        document.body.appendChild(modal);
-        modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
-        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    };
-
-    if (profileBtn) profileBtn.addEventListener('click', showProjectInfo);
-    langButtons.forEach(btn => btn.addEventListener('click', () => { currentLang = btn.dataset.lang; localStorage.setItem('matdan_lang', currentLang); updateUIStrings(); switchTab(activeTab); }));
-    navButtons.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
-
-    if (db) {
-        onValue(ref(db, 'live_alerts'), (snapshot) => {
-            if (snapshot.exists()) {
-                const newAlert = Object.values(snapshot.val()).sort((a,b) => b.id - a.id)[0];
-                if (newAlert && !MOCK_ALERTS.find(a => a.id === newAlert.id)) {
-                    MOCK_ALERTS.unshift(newAlert);
-                    const badge = document.querySelector('.notification-badge');
-                    if (badge) { badge.innerText = parseInt(badge.innerText || 0) + 1; badge.style.display = 'flex'; }
-                    if (activeTab === 'alerts') renderAlerts();
-                }
-            }
-        });
-    }
-
-    updateUIStrings();
-    switchTab('journey');
+    console.log("[MatdanSathi] Init complete. Booting journey...");
+    window.switchTab('journey');
 });
