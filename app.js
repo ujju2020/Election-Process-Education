@@ -1,6 +1,6 @@
 /* 
- * Election Process Education Assistant
- * Developer - Antigravity (powered by Gemini)
+ * Matdan Sathi - Election Process Education Assistant
+ * Developer - Ujjwal Kumar Bhowmick (ujjwalkumarbhowmick30@gmail.com)
  * Project ID: fleet-bus-494014-q1
  */
 

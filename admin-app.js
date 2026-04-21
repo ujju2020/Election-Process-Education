@@ -1,3 +1,7 @@
+/* 
+ * Matdan Sathi - Election Process Education Assistant
+ * Developer - Ujjwal Kumar Bhowmick (ujjwalkumarbhowmick30@gmail.com)
+ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
