@@ -1,0 +1,93 @@
+{
+  "journey": [
+    {
+      "id": 1,
+      "title": "Delimitation",
+      "desc": "Constituencies are redrawn to ensure every vote has equal value. This is managed by the Delimitation Commission.",
+      "details": "The boundaries are adjusted based on population changes to maintain fair representation in the Lok Sabha.",
+      "icon": "map"
+    },
+    {
+      "id": 2,
+      "title": "Electoral Rolls",
+      "desc": "The voter list is updated. Being a citizen of 18+ years is the primary eligibility.",
+      "details": "Voters must register via Form 6. The final list is published before polling.",
+      "icon": "users"
+    },
+    {
+      "id": 3,
+      "title": "Scheduling",
+      "desc": "The Election Commission of India (ECI) announces the full timeline for polling phases.",
+      "details": "Includes dates for nominations, scrutiny, withdrawal, and final polling days.",
+      "icon": "calendar"
+    },
+    {
+      "id": 4,
+      "title": "Nominations",
+      "desc": "Candidates file their papers through the Returning Officer (RO).",
+      "details": "Financial assets, education, and criminal records are declared via affidavits.",
+      "icon": "file-text"
+    },
+    {
+      "id": 5,
+      "title": "Campaigning",
+      "desc": "Parties and candidates pitch their vision to voters under the Model Code of Conduct.",
+      "details": "Campaigning stops 48 hours before the close of polls to ensure a peaceful environment.",
+      "icon": "megaphone"
+    },
+    {
+      "id": 6,
+      "title": "Polling",
+      "desc": "Voters use Electronic Voting Machines (EVMs) with VVPAT for transparency.",
+      "details": "Polling occurs in multiple stages across the country to ensure security.",
+      "icon": "box"
+    },
+    {
+      "id": 7,
+      "title": "Counting & Results",
+      "desc": "Votes are counted under strict supervision, and winners are declared.",
+      "details": "The VVPAT slips are also partially verified to confirm EVM accuracy.",
+      "icon": "award"
+    }
+  ],
+  "readiness": [
+    {
+      "id": "reg",
+      "title": "Registration Status",
+      "desc": "Is your name on the Electoral Roll?",
+      "action": "Check on voters.eci.gov.in"
+    },
+    {
+      "id": "epic",
+      "title": "Voter ID (EPIC Card)",
+      "desc": "Do you have a physical or digital EPIC card?",
+      "action": "Download e-EPIC"
+    },
+    {
+      "id": "booth",
+      "title": "Locate Polling Booth",
+      "desc": "Know where to go on election day.",
+      "action": "Find my booth"
+    },
+    {
+      "id": "docs",
+      "title": "Valid Identity Proof",
+      "desc": "Aadhaar, PAN, or Passport are valid alternatives.",
+      "action": "View list of valid IDs"
+    }
+  ],
+  "faqs": [
+    {
+      "question": "How do I register for the first time?",
+      "answer": "You can fill out Form 6 on the Voter Service Portal or use the Voter Helpline App."
+    },
+    {
+      "question": "What is VVPAT?",
+      "answer": "Voter Verifiable Paper Audit Trail allows you to see a paper slip confirming your vote for 7 seconds."
+    },
+    {
+      "question": "Can I vote if I am an NRI?",
+      "answer": "Yes, NRIs can register as 'Overseas Electors' but must be physically present at the booth to vote."
+    }
+  ]
+}

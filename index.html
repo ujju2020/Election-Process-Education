@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Process Education Assistant</title>
+    <meta name="description" content="Learn about the election process in India through this interactive guided assistant. Fast, accessible, and offline-ready.">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <link rel="apple-touch-icon" href="icon.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="glass-header">
+            <div class="brand">
+                <div class="logo-box">
+                    <i data-lucide="vote"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>Matdan Sathi</h1>
+                    <span class="status-badge live">
+                        <span class="pulse"></span> Live Guide
+                    </span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn search-btn" aria-label="Search">
+                    <i data-lucide="search"></i>
+                </button>
+                <button class="icon-btn profile-btn" aria-label="Profile">
+                    <i data-lucide="user"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="fade-in">
+            <!-- Tabs will be rendered here -->
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="glass-nav">
+            <button class="nav-item active" data-tab="journey" aria-selected="true">
+                <i data-lucide="map"></i>
+                <span>Journey</span>
+            </button>
+            <button class="nav-item" data-tab="assistant" aria-selected="false">
+                <i data-lucide="message-square"></i>
+                <span>Assistant</span>
+            </button>
+            <button class="nav-item" data-tab="readiness" aria-selected="false">
+                <i data-lucide="check-circle"></i>
+                <span>Readiness</span>
+            </button>
+            <button class="nav-item" data-tab="alerts" aria-selected="false">
+                <div class="notification-badge" style="display: none;">0</div>
+                <i data-lucide="bell"></i>
+                <span>Alerts</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Templates -->
+    <template id="journey-view-template">
+        <section class="view-section">
+            <div class="section-header">
+                <h2>Election Journey</h2>
+                <p>Follow the path of democracy</p>
+            </div>
+            <div class="timeline-container scroll-snapper">
+                <!-- Timeline items will be injected here -->
+            </div>
+        </section>
+    </template>
+
+    <template id="assistant-view-template">
+        <section class="view-section full-height">
+            <div class="chat-container glass-panel">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="assistant-msg animate-up">
+                        <div class="avatar"><i data-lucide="bot"></i></div>
+                        <div class="msg-bubble">
+                            Namaste! I am your Election Assistant. How can I help you today?
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" placeholder="Ask about voting..." id="chat-input">
+                    <button class="send-btn"><i data-lucide="send"></i></button>
+                </div>
+            </div>
+        </section>
+    </template>
+
+    <template id="alerts-view-template">
+        <section class="view-section">
+            <div class="section-header">
+                <div class="header-main">
+                    <h2>Live Alerts</h2>
+                    <p>Critical updates from ECI</p>
+                </div>
+                <button class="text-btn">Mark all read</button>
+            </div>
+            <div class="alerts-list">
+                <!-- Alerts will be injected here -->
+            </div>
+        </section>
+    </template>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
