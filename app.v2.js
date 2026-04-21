@@ -16,9 +16,10 @@ const FALLBACK_DATA = {
 let appData = null;
 let currentLang = localStorage.getItem('matdan_lang') || 'en';
 let activeTab = 'journey';
+let MOCK_ALERTS = [];
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, limitToLast, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -40,11 +41,32 @@ function initFirebase() {
         db = getDatabase(firebaseApp);
         auth = getAuth(firebaseApp);
         analytics = getAnalytics(firebaseApp);
-        signInAnonymously(auth).catch((e) => console.warn("[MatdanSathi] Auth failed", e.message));
-        console.log("[MatdanSathi] Firebase Initialized (Live Mode)");
+        signInAnonymously(auth).then(() => {
+            console.log("[MatdanSathi] Firebase Auth Active");
+            setupLiveAlerts();
+        }).catch((e) => console.warn("[MatdanSathi] Auth failed", e.message));
     } catch (e) {
         console.warn("[MatdanSathi] Firebase Init Failed:", e.message);
     }
+}
+
+function setupLiveAlerts() {
+    if (!db) return;
+    const alertsRef = query(ref(db, 'live_alerts'), limitToLast(10));
+    onValue(alertsRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.val();
+            const newAlerts = Object.values(data).sort((a,b) => b.id - a.id);
+            MOCK_ALERTS = newAlerts;
+            const badge = document.querySelector('.notification-badge');
+            if (badge) {
+                const count = MOCK_ALERTS.filter(a => a.unread).length;
+                badge.innerText = count;
+                badge.style.display = count > 0 ? 'flex' : 'none';
+            }
+            if (activeTab === 'alerts') window.switchTab('alerts');
+        }
+    });
 }
 
 function escapeHTML(str) {
@@ -88,7 +110,7 @@ function renderAssistant(container) {
         setTimeout(() => {
             const bot = document.createElement('div');
             bot.className = 'assistant-msg animate-up';
-            bot.innerHTML = `<div class="avatar"><i data-lucide="bot"></i></div><div class="msg-bubble">Thank you. (Offline Mode)</div>`;
+            bot.innerHTML = `<div class="avatar"><i data-lucide="bot"></i></div><div class="msg-bubble">Processing query... (Offline)</div>`;
             msgArea.appendChild(bot);
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }, 800);
@@ -137,6 +159,18 @@ function renderAlerts(container) {
     if (!t || !container) return;
     container.innerHTML = '';
     container.appendChild(t.content.cloneNode(true));
+    const list = container.querySelector('.alerts-list');
+    if (!list) return;
+    if (MOCK_ALERTS.length === 0) {
+        list.innerHTML = '<div class="glass-panel" style="padding:20px; text-align:center;">No live alerts right now.</div>';
+    } else {
+        MOCK_ALERTS.forEach(a => {
+            const c = document.createElement('div');
+            c.className = `alert-card glass-panel ${a.unread ? 'unread' : ''}`;
+            c.innerHTML = `<div class="alert-icon ${escapeHTML(a.type)}"><i data-lucide="${a.type === 'warning' ? 'alert-triangle' : 'info'}"></i></div><div class="alert-content"><h4>${escapeHTML(a.title)}</h4><p>${escapeHTML(a.desc)}</p></div>`;
+            list.appendChild(c);
+        });
+    }
 }
 
 window.switchTab = (id) => {

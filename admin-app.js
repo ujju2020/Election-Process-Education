@@ -1,9 +1,10 @@
 /* 
  * Matdan Sathi - Election Process Education Assistant
- * Developer - Ujjwal Kumar Bhowmick (ujjwalkumarbhowmick30@gmail.com)
+ * Admin Dashboard Logic
  */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
 const firebaseConfig = {
@@ -19,6 +20,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
 const analytics = getAnalytics(app);
 
 const ADMIN_PASS = "Ujju@3006#";
@@ -30,6 +32,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const passInput = document.getElementById('admin-pass');
     const broadcastBtn = document.getElementById('broadcast-btn');
     const statusMsg = document.getElementById('status-msg');
+
+    // Attempt Anonymous Sign-in for database access
+    signInAnonymously(auth).then(() => {
+        console.log("[Admin] Firebase Auth Session Active");
+    }).catch(e => {
+        console.error("[Admin] Auth error:", e.message);
+    });
 
     loginBtn.addEventListener('click', () => {
         if (passInput.value === ADMIN_PASS) {
@@ -52,6 +61,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        broadcastBtn.disabled = true;
+        statusMsg.style.color = '#6366f1';
+        statusMsg.innerText = 'Attempting to broadcast...';
+
         try {
             const alertsRef = ref(db, 'live_alerts');
             const newAlert = {
@@ -72,12 +85,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clear form
             document.getElementById('alert-title').value = '';
             document.getElementById('alert-desc').value = '';
-
-            setTimeout(() => { statusMsg.innerText = ''; }, 3000);
         } catch (e) {
             console.error(e);
             statusMsg.style.color = '#ef4444';
-            statusMsg.innerText = 'Failed to broadcast alert.';
+            let errMsg = 'Failed: Check internet and if Realtime Database is enabled.';
+            if (e.message.includes('permission_denied')) errMsg = 'Permission Denied: Check Database Rules.';
+            statusMsg.innerText = errMsg;
+        } finally {
+            broadcastBtn.disabled = false;
         }
     });
 
