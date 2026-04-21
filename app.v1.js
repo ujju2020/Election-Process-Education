@@ -33,17 +33,17 @@ const firebaseConfig = {
     measurementId: "G-ZH85HCNMFB"
 };
 
-let analytics, db, auth;
+let firebaseApp, analytics, db, auth;
 function initFirebase() {
     try {
-        const app = initializeApp(firebaseConfig);
-        db = getDatabase(app);
-        auth = getAuth(app);
-        analytics = getAnalytics(app);
-        signInAnonymously(auth).catch(() => { });
-        console.log("[MatdanSathi] Firebase Initialized");
+        firebaseApp = initializeApp(firebaseConfig);
+        db = getDatabase(firebaseApp);
+        auth = getAuth(firebaseApp);
+        analytics = getAnalytics(firebaseApp);
+        signInAnonymously(auth).catch((e) => console.warn("[MatdanSathi] Auth failed", e.message));
+        console.log("[MatdanSathi] Firebase Initialized (Live Mode)");
     } catch (e) {
-        console.warn("[MatdanSathi] Firebase Init Failed - Offline/Placeholder Mode Active");
+        console.warn("[MatdanSathi] Firebase Init Failed:", e.message);
     }
 }
 
@@ -86,12 +86,12 @@ function renderAssistant(container) {
         msgArea.appendChild(uMsg);
         input.value = '';
         setTimeout(() => {
-            const bMsg = document.createElement('div');
-            bMsg.className = 'assistant-msg animate-up';
-            bMsg.innerHTML = `<div class="avatar"><i data-lucide="bot"></i></div><div class="msg-bubble">Processing query... (Offline)</div>`;
-            msgArea.appendChild(bMsg);
+            const bot = document.createElement('div');
+            bot.className = 'assistant-msg animate-up';
+            bot.innerHTML = `<div class="avatar"><i data-lucide="bot"></i></div><div class="msg-bubble">Thank you. (Offline Mode)</div>`;
+            msgArea.appendChild(bot);
             if (typeof lucide !== 'undefined') lucide.createIcons();
-        }, 500);
+        }, 800);
     };
 }
 
@@ -156,7 +156,7 @@ window.switchTab = (id) => {
 };
 
 async function start() {
-    console.log("[MatdanSathi] Starting init sequence...");
+    console.log("[MatdanSathi] Starting init...");
     initFirebase();
     const resp = await fetch('data.json').catch(() => null);
     if (resp && resp.ok) appData = await resp.json();
@@ -181,7 +181,7 @@ async function start() {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
-    console.log("[MatdanSathi] Ready.");
+    console.log("[MatdanSathi] Init complete. UI Ready.");
     window.switchTab('journey');
 }
 
