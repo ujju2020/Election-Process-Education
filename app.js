@@ -163,12 +163,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         mainContent.appendChild(template.content.cloneNode(true));
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
+        const chatMessages = document.getElementById('chat-messages');
         const strings = appData[currentLang].ui;
         chatMessages.querySelector('.msg-bubble').innerText = currentLang === 'bn' ? 'নমস্কার! আমি আপনার নির্বাচনী সহকারী। আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি?' : 
                                                             currentLang === 'hi' ? 'नमस्ते! मैं आपका चुनाव सहायक हूं। मैं आज आपकी क्या मदद कर सकता हूं?' : 
                                                             'Namaste! I am your Election Assistant. How can I help you today?';
         
         const input = document.getElementById('chat-input');
+        const sendBtn = document.querySelector('.send-btn');
         input.placeholder = strings.ask_placeholder;
 
         const sendMessage = () => {
@@ -274,15 +276,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         mainContent.appendChild(template.content.cloneNode(true));
         
         mainContent.querySelector('h2').innerText = strings.alerts;
-        mainContent.querySelector('.text-btn').innerText = strings.mark_read;
+        if (mainContent.querySelector('.text-btn')) {
+            mainContent.querySelector('.text-btn').innerText = strings.mark_read;
+        }
 
         const container = mainContent.querySelector('.alerts-list');
         MOCK_ALERTS.forEach(alert => {
             const card = document.createElement('div');
-            card.className = 'alert-card glass-panel';
+            card.className = `alert-card animate-up ${alert.unread ? 'unread' : ''}`;
             card.innerHTML = `
-                ${alert.unread ? '<div class="unread-dot"></div>' : ''}
-                <div class="alert-icon ${alert.type}"><i data-lucide="${alert.type === 'info' ? 'info' : 'alert-triangle'}"></i></div>
+                <div class="alert-icon ${alert.type}">
+                    <i data-lucide="${alert.type === 'warning' ? 'alert-triangle' : 'info'}"></i>
+                </div>
                 <div class="alert-content">
                     <h4>${escapeHTML(alert.title)}</h4>
                     <p>${escapeHTML(alert.desc)}</p>
@@ -308,23 +313,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const updateEVMState = () => {
             if (isBallotActive) {
-                cuBusyLight.classList.remove('active');
-                buReadyLight.classList.add('active');
+                if (cuBusyLight) cuBusyLight.classList.remove('active');
+                if (buReadyLight) buReadyLight.classList.add('active');
             } else {
-                cuBusyLight.classList.add('active');
-                buReadyLight.classList.remove('active');
+                if (cuBusyLight) cuBusyLight.classList.add('active');
+                if (buReadyLight) buReadyLight.classList.remove('active');
             }
         };
         updateEVMState();
 
-        ballotBtn.addEventListener('click', () => {
-            if (!isBallotActive) {
-                isBallotActive = true;
-                updateEVMState();
-                renderCandidates();
-                logEvent(analytics, 'ballot_activated');
-            }
-        });
+        if (ballotBtn) {
+            ballotBtn.addEventListener('click', () => {
+                if (!isBallotActive) {
+                    isBallotActive = true;
+                    updateEVMState();
+                    renderCandidates();
+                    logEvent(analytics, 'ballot_activated');
+                }
+            });
+        }
 
         const castVote = (candidate) => {
             if (!isBallotActive) return;
@@ -332,37 +339,40 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // UI Feedback
             const row = document.querySelector(`[data-cand-id="${candidate.id}"]`);
-            row.querySelector('.vote-light').classList.add('active');
-            buReadyLight.classList.remove('active');
+            if (row) row.querySelector('.vote-light').classList.add('active');
+            if (buReadyLight) buReadyLight.classList.remove('active');
             
             logEvent(analytics, 'vote_cast', { candidate: candidate.name });
 
             // VVPAT Sequence
             const slip = document.getElementById('vvpat-slip');
-            slip.querySelector('.slip-num').innerText = `ID: ${candidate.id}`;
-            slip.querySelector('.slip-name').innerText = candidate.name;
-            slip.querySelector('.slip-symbol-box').innerHTML = `<i data-lucide="${candidate.symbol}"></i>`;
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+            if (slip) {
+                slip.querySelector('.slip-num').innerText = `ID: ${candidate.id}`;
+                slip.querySelector('.slip-name').innerText = candidate.name;
+                slip.querySelector('.slip-symbol-box').innerHTML = `<i data-lucide="${candidate.symbol}"></i>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
 
-            setTimeout(() => {
-                slip.classList.add('show');
-                
-                // Beep/End Sequence after 7 seconds
                 setTimeout(() => {
-                    slip.classList.remove('show');
-                    slip.classList.add('drop');
+                    slip.classList.add('show');
                     
+                    // 7 seconds display
                     setTimeout(() => {
-                        isBallotActive = false;
-                        updateEVMState();
-                        renderCandidates(); // Reset buttons
-                        if (activeTab === 'vote') renderVote(); // Refresh view
-                    }, 1000);
-                }, 7000);
-            }, 500);
+                        slip.classList.remove('show');
+                        slip.classList.add('drop');
+                        
+                        setTimeout(() => {
+                            isBallotActive = false;
+                            updateEVMState();
+                            renderCandidates();
+                            if (activeTab === 'vote') renderVote();
+                        }, 1000);
+                    }, 7000);
+                }, 500);
+            }
         };
 
         const renderCandidates = () => {
+            if (!buCandidates) return;
             buCandidates.innerHTML = '';
             candidates.forEach(cand => {
                 const row = document.createElement('div');
@@ -388,7 +398,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderCandidates();
     };
 
+    // Project Info Modal Logic
+    const profileBtn = document.querySelector('.profile-btn');
+    const showProjectInfo = () => {
+        const template = document.getElementById('info-modal-template');
+        if (!template) return;
+        const modal = template.content.cloneNode(true).querySelector('.modal-overlay');
+        document.body.appendChild(modal);
+
+        modal.querySelector('.close-modal').addEventListener('click', () => {
+            modal.remove();
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    };
+
+    if (profileBtn) {
+        profileBtn.addEventListener('click', showProjectInfo);
+    }
+
     let activeTab = 'journey';
+    const switchTab = (tabId) => {
+        activeTab = tabId;
         logEvent(analytics, 'tab_view', { tab_name: tabId });
         navButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabId);
@@ -447,7 +482,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             updateUIStrings();
             
             // Re-render current tab
-            const activeTab = document.querySelector('.nav-item.active').dataset.tab;
             switchTab(activeTab);
         });
     });
@@ -466,7 +500,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     badge.innerText = parseInt(badge.innerText) + 1;
                     badge.style.display = 'flex';
                 }
-                const activeTab = document.querySelector('.nav-item.active').dataset.tab;
                 if (activeTab === 'alerts') renderAlerts();
             }
         }
