@@ -59,9 +59,9 @@ const ELECTION_STAGES = [
     { id: 7, title: "Counting & Results", desc: "Votes are counted and winners are declared.", icon: "tally-5" }
 ];
 
-let isInitialLoad = true;
 let appData = null;
 let currentLang = localStorage.getItem('matdan_lang') || 'en';
+let activeTab = 'journey';
 
 const MOCK_ALERTS = [
     { id: 1, type: "info", title: "Registration Open", desc: "Last date for voter registration is approaching. Check eci.gov.in", unread: true },
@@ -103,13 +103,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     initFirebase();
     await loadAppData();
     registerSW();
-    updateUIStrings();
-
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-
+    
     const mainContent = document.getElementById('main-content');
     const navButtons = document.querySelectorAll('.nav-item');
     const langButtons = document.querySelectorAll('.lang-btn');
+    const profileBtn = document.querySelector('.profile-btn');
 
     function updateUIStrings() {
         if (!appData || !appData[currentLang]) return;
@@ -118,12 +116,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Update Nav
         document.querySelector('[data-tab="journey"] span').innerText = strings.journey;
         document.querySelector('[data-tab="assistant"] span').innerText = strings.assistant;
+        document.querySelector('[data-tab="vote"] span').innerText = strings.vote || 'Vote';
         document.querySelector('[data-tab="readiness"] span').innerText = strings.readiness;
         document.querySelector('[data-tab="alerts"] span').innerText = strings.alerts;
-
-        // Update Search Placeholder (if exists)
-        const searchInput = document.getElementById('chat-input');
-        if (searchInput) searchInput.placeholder = strings.ask_placeholder;
 
         // Set Active Lang Button
         langButtons.forEach(btn => {
@@ -133,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const renderJourney = () => {
         const template = document.getElementById('journey-view-template');
+        if (!template) return;
         mainContent.innerHTML = '';
         mainContent.appendChild(template.content.cloneNode(true));
         
@@ -159,19 +155,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const renderAssistant = () => {
         const template = document.getElementById('assistant-view-template');
+        if (!template) return;
         mainContent.innerHTML = '';
         mainContent.appendChild(template.content.cloneNode(true));
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-
-        const chatMessages = document.getElementById('chat-messages');
-        const strings = appData[currentLang].ui;
-        chatMessages.querySelector('.msg-bubble').innerText = currentLang === 'bn' ? 'নমস্কার! আমি আপনার নির্বাচনী সহকারী। আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি?' : 
-                                                            currentLang === 'hi' ? 'नमस्ते! मैं आपका चुनाव सहायक हूं। मैं आज आपकी क्या मदद कर सकता हूं?' : 
-                                                            'Namaste! I am your Election Assistant. How can I help you today?';
         
+        const chatMessages = document.getElementById('chat-messages');
         const input = document.getElementById('chat-input');
         const sendBtn = document.querySelector('.send-btn');
-        input.placeholder = strings.ask_placeholder;
+        const strings = appData[currentLang].ui;
+
+        if (input) input.placeholder = strings.ask_placeholder;
+        if (chatMessages) {
+            chatMessages.querySelector('.msg-bubble').innerText = currentLang === 'bn' ? 'নমস্কার! আমি আপনার নির্বাচনী সহকারী। আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি?' : 
+                                                                currentLang === 'hi' ? 'नमस्ते! मैं आपका चुनाव सहायक हूं। मैं आज आपकी क्या मदद कर सकता हूं?' : 
+                                                                'Namaste! I am your Election Assistant. How can I help you today?';
+        }
 
         const sendMessage = () => {
             const text = input.value.trim();
@@ -185,7 +183,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             logEvent(analytics, 'assistant_query', { query: text });
 
-            // Assistant Logic: Search FAQ data or provide default
             setTimeout(() => {
                 let responseText = currentLang === 'bn' ? `"${escapeHTML(text)}" সম্পর্কে এটি একটি দুর্দান্ত প্রশ্ন। সাধারণত, নির্বাচন কমিশন এই বিষয়ে নিয়মিত আপডেট দেয়!` :
                                    currentLang === 'hi' ? `"${escapeHTML(text)}" के बारे में यह एक बेहतरीन सवाल है। आम तौर पर, चुनाव आयोग इस पर अपडेटेड दिशा-निर्देश प्रदान करता है!` :
@@ -211,8 +208,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             }, 1000);
         };
 
-        sendBtn.addEventListener('click', sendMessage);
-        input.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+        if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+        if (input) input.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
     const renderReadiness = () => {
@@ -223,9 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <h2>${strings.readiness} Checklist</h2>
                     <p>${currentLang === 'bn' ? 'ব্যালটের জন্য আপনি প্রস্তুত কিনা নিশ্চিত করুন' : currentLang === 'hi' ? 'सुनिश्चित करें कि आप मतपत्र के लिए तैयार हैं' : 'Ensure you are ready for the ballot'}</p>
                 </div>
-                <div class="readiness-list timeline-container">
-                    <!-- Items will be injected here -->
-                </div>
+                <div class="readiness-list timeline-container"></div>
                 <div class="glass-panel booth-finder-feature animate-up" style="margin-top: 24px; padding: 20px;">
                     <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 12px;">
                         <div class="icon-box" style="background: var(--primary); color: white; padding: 10px; border-radius: 10px;">
@@ -270,24 +266,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const renderAlerts = () => {
-        const strings = appData[currentLang].ui;
         const template = document.getElementById('alerts-view-template');
+        if (!template) return;
         mainContent.innerHTML = '';
         mainContent.appendChild(template.content.cloneNode(true));
         
+        const strings = appData[currentLang].ui;
         mainContent.querySelector('h2').innerText = strings.alerts;
-        if (mainContent.querySelector('.text-btn')) {
-            mainContent.querySelector('.text-btn').innerText = strings.mark_read;
-        }
+        const markBtn = mainContent.querySelector('.text-btn');
+        if (markBtn) markBtn.innerText = strings.mark_read;
 
         const container = mainContent.querySelector('.alerts-list');
         MOCK_ALERTS.forEach(alert => {
             const card = document.createElement('div');
-            card.className = `alert-card animate-up ${alert.unread ? 'unread' : ''}`;
+            card.className = `alert-card glass-panel ${alert.unread ? 'unread' : ''}`;
             card.innerHTML = `
-                <div class="alert-icon ${alert.type}">
-                    <i data-lucide="${alert.type === 'warning' ? 'alert-triangle' : 'info'}"></i>
-                </div>
+                <div class="alert-icon ${alert.type}"><i data-lucide="${alert.type === 'warning' ? 'alert-triangle' : 'info'}"></i></div>
                 <div class="alert-content">
                     <h4>${escapeHTML(alert.title)}</h4>
                     <p>${escapeHTML(alert.desc)}</p>
@@ -301,11 +295,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     let isBallotActive = false;
     const renderVote = () => {
         const template = document.getElementById('vote-view-template');
+        if (!template) return;
         mainContent.innerHTML = '';
         mainContent.appendChild(template.content.cloneNode(true));
 
         const candidates = (appData && appData[currentLang].candidates) || [];
-
         const buCandidates = document.getElementById('bu-candidates');
         const cuBusyLight = document.getElementById('cu-busy-light');
         const buReadyLight = document.getElementById('bu-ready-light');
@@ -327,51 +321,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!isBallotActive) {
                     isBallotActive = true;
                     updateEVMState();
-                    renderCandidates();
+                    renderCandidatesList();
                     logEvent(analytics, 'ballot_activated');
                 }
             });
         }
 
-        const castVote = (candidate) => {
-            if (!isBallotActive) return;
-            isBallotActive = false;
-            
-            // UI Feedback
-            const row = document.querySelector(`[data-cand-id="${candidate.id}"]`);
-            if (row) row.querySelector('.vote-light').classList.add('active');
-            if (buReadyLight) buReadyLight.classList.remove('active');
-            
-            logEvent(analytics, 'vote_cast', { candidate: candidate.name });
-
-            // VVPAT Sequence
-            const slip = document.getElementById('vvpat-slip');
-            if (slip) {
-                slip.querySelector('.slip-num').innerText = `ID: ${candidate.id}`;
-                slip.querySelector('.slip-name').innerText = candidate.name;
-                slip.querySelector('.slip-symbol-box').innerHTML = `<i data-lucide="${candidate.symbol}"></i>`;
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-
-                setTimeout(() => {
-                    slip.classList.add('show');
-                    
-                    // 7 seconds display
-                    setTimeout(() => {
-                        slip.classList.remove('show');
-                        slip.classList.add('drop');
-                        
-                        setTimeout(() => {
-                            isBallotActive = false;
-                            updateEVMState();
-                            renderCandidates();
-                            if (activeTab === 'vote') renderVote();
-                        }, 1000);
-                    }, 7000);
-                }, 500);
-            }
-        };
-
-        const renderCandidates = () => {
+        const renderCandidatesList = () => {
             if (!buCandidates) return;
             buCandidates.innerHTML = '';
             candidates.forEach(cand => {
@@ -387,52 +343,55 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <button class="vote-btn" ${!isBallotActive ? 'disabled' : ''}></button>
                     </div>
                 `;
-                
-                const btn = row.querySelector('.vote-btn');
-                btn.addEventListener('click', () => castVote(cand));
+                row.querySelector('.vote-btn').addEventListener('click', () => castVote(cand));
                 buCandidates.appendChild(row);
             });
             if (typeof lucide !== 'undefined') lucide.createIcons();
         };
 
-        renderCandidates();
+        const castVote = (candidate) => {
+            if (!isBallotActive) return;
+            isBallotActive = false;
+            
+            const row = document.querySelector(`[data-cand-id="${candidate.id}"]`);
+            if (row) row.querySelector('.vote-light').classList.add('active');
+            if (buReadyLight) buReadyLight.classList.remove('active');
+            
+            logEvent(analytics, 'vote_cast', { candidate: candidate.name });
+
+            const slip = document.getElementById('vvpat-slip');
+            if (slip) {
+                slip.querySelector('.slip-num').innerText = `ID: ${candidate.id}`;
+                slip.querySelector('.slip-name').innerText = candidate.name;
+                slip.querySelector('.slip-symbol-box').innerHTML = `<i data-lucide="${candidate.symbol}"></i>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+
+                setTimeout(() => {
+                    slip.classList.add('show');
+                    setTimeout(() => {
+                        slip.classList.remove('show');
+                        slip.classList.add('drop');
+                        setTimeout(() => {
+                            isBallotActive = false;
+                            updateEVMState();
+                            renderCandidatesList();
+                            if (activeTab === 'vote') renderVote();
+                        }, 1000);
+                    }, 7000);
+                }, 500);
+            }
+        };
+        renderCandidatesList();
     };
 
-    // Project Info Modal Logic
-    const profileBtn = document.querySelector('.profile-btn');
-    const showProjectInfo = () => {
-        const template = document.getElementById('info-modal-template');
-        if (!template) return;
-        const modal = template.content.cloneNode(true).querySelector('.modal-overlay');
-        document.body.appendChild(modal);
-
-        modal.querySelector('.close-modal').addEventListener('click', () => {
-            modal.remove();
-        });
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.remove();
-        });
-
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    };
-
-    if (profileBtn) {
-        profileBtn.addEventListener('click', showProjectInfo);
-    }
-
-    let activeTab = 'journey';
     const switchTab = (tabId) => {
         activeTab = tabId;
         logEvent(analytics, 'tab_view', { tab_name: tabId });
+        
         navButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabId);
             btn.setAttribute('aria-selected', btn.dataset.tab === tabId);
         });
-
-        const traceName = `tab_render_${tabId}`;
-        let t = null;
-        try { t = trace(perf, traceName); t.start(); } catch (e) {}
 
         switch(tabId) {
             case 'journey': renderJourney(); break;
@@ -440,64 +399,49 @@ document.addEventListener('DOMContentLoaded', async () => {
             case 'vote': renderVote(); break;
             case 'readiness': renderReadiness(); break;
             case 'alerts': renderAlerts(); break;
-            default: mainContent.innerHTML = '<div class="view-section"><h2>Coming Soon</h2></div>';
+            default: mainContent.innerHTML = '<h2>Coming Soon</h2>';
         }
-
-        if (t) t.stop();
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
-    // Global Search Logic
-    const searchBtn = document.querySelector('.search-btn');
-    if (searchBtn) {
-        searchBtn.addEventListener('click', () => {
-            const strings = appData[currentLang].ui;
-            const query = prompt(strings.search_placeholder);
-            if (!query) return;
-            
-            logEvent(analytics, 'search_performed', { query });
+    const showProjectInfo = () => {
+        const template = document.getElementById('info-modal-template');
+        if (!template) return;
+        const modal = template.content.cloneNode(true).querySelector('.modal-overlay');
+        document.body.appendChild(modal);
 
-            // Search in journey and faqs
-            let match = null;
-            if (appData && appData[currentLang]) {
-                match = appData[currentLang].journey.find(s => s.title.toLowerCase().includes(query.toLowerCase()));
-                if (!match && appData[currentLang].faqs) {
-                    match = appData[currentLang].faqs.find(f => f.question.toLowerCase().includes(query.toLowerCase()));
-                }
-            }
+        modal.querySelector('.close-modal').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    };
 
-            if (match) {
-                alert(`Search Match: ${match.title || match.question}\n\n${match.desc || match.answer}`);
-            } else {
-                alert(currentLang === 'bn' ? 'সঠিক মিল খুঁজে পাওয়া যায়নি।' : currentLang === 'hi' ? 'कोई सटीक मिलान नहीं मिला।' : 'No exact match found.');
-            }
-        });
-    }
-
-    // Language Switching Logic
+    // Global Listeners
+    if (profileBtn) profileBtn.addEventListener('click', showProjectInfo);
+    
     langButtons.forEach(btn => {
         btn.addEventListener('click', () => {
             currentLang = btn.dataset.lang;
             localStorage.setItem('matdan_lang', currentLang);
             updateUIStrings();
-            
-            // Re-render current tab
             switchTab(activeTab);
         });
     });
 
-    // Live Alerts from Firebase RTDB
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    // RTDB Listener
     const alertsRef = ref(db, 'live_alerts');
     onValue(alertsRef, (snapshot) => {
         if (snapshot.exists()) {
             const data = snapshot.val();
-            const newAlert = Object.values(data).sort((a, b) => b.id - a.id)[0];
-            
+            const newAlert = Object.values(data).sort((a,b) => b.id - a.id)[0];
             if (newAlert && !MOCK_ALERTS.find(a => a.id === newAlert.id)) {
                 MOCK_ALERTS.unshift(newAlert);
                 const badge = document.querySelector('.notification-badge');
                 if (badge) {
-                    badge.innerText = parseInt(badge.innerText) + 1;
+                    badge.innerText = parseInt(badge.innerText || 0) + 1;
                     badge.style.display = 'flex';
                 }
                 if (activeTab === 'alerts') renderAlerts();
@@ -505,10 +449,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    navButtons.forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-
-    // Default Tab
+    // Init
+    updateUIStrings();
     switchTab('journey');
 });
