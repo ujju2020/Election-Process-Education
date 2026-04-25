@@ -191,7 +191,7 @@ function renderAssistant(container) {
             const langContext = currentLang === 'hi' ? 'Respond in Hindi.' : currentLang === 'bn' ? 'Respond in Bengali.' : 'Respond in English.';
             const systemInstruction = `You are Matdan Sathi, an expert on the Indian Election Process. Keep your answers concise, helpful, and neutral. ${langContext}`;
             
-            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyDMx5BLN1AWbFppDT14cqE_INgea3dQXWg', {
+            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCTi8JZUSd76Y0BIY75xJ4n9soI2pXAKPg', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
