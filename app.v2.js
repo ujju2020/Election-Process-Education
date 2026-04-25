@@ -138,19 +138,36 @@ function updateAlertsBadge() {
 
 /** Synchronizes live alerts from Firebase */
 function setupLiveAlerts() {
-    if (!State.firebase.db) return;
+    // Initial high-quality demo alert for hackathon judges
+    State.mockAlerts = [{
+        id: 1,
+        headline: "Welcome to Matdan Sathi",
+        desc: "Stay tuned for live election updates and official alerts.",
+        type: "info",
+        timestamp: new Date().toISOString()
+    }];
+
+    if (!State.firebase.db) {
+        UIController.render();
+        return;
+    }
+
     const alertRef = ref(State.firebase.db, 'live_alerts');
     onValue(alertRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-            State.mockAlerts = Object.entries(data).map(([id, val]) => ({ id, ...val })).reverse();
+            const live = Object.entries(data).map(([id, val]) => ({ id, ...val })).reverse();
+            // Merge demo and live alerts
+            State.mockAlerts = [...live, ...State.mockAlerts.filter(a => a.id === 1)];
             updateAlertsBadge();
             if (State.activeTab === 'alerts') UIController.render();
             
-            if (!State.initialAlertLoad && State.mockAlerts.length > 0) {
-                showToast(State.mockAlerts[0]);
+            if (!State.initialAlertLoad && live.length > 0) {
+                showToast(live[0]);
             }
             State.initialAlertLoad = false;
+        } else {
+            UIController.render();
         }
     });
 }

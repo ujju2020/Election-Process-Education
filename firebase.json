@@ -12,6 +12,17 @@
       "implementation_plan.md",
       "task.md",
       "walkthrough.md"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|json|html)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      }
     ]
   },
   "functions": [
