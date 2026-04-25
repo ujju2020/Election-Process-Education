@@ -43,9 +43,11 @@ h1, h2, h3, .brand-text {
     max-width: 500px;
     margin: 0 auto;
     height: 100dvh;
+    max-height: 100dvh;
     display: flex;
     flex-direction: column;
     position: relative;
+    overflow: hidden;
     padding-bottom: env(safe-area-inset-bottom);
     background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent),
                 radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.1), transparent);

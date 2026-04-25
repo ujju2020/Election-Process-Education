@@ -140,19 +140,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Login logic
-    loginBtn.onclick = () => {
+    loginBtn.addEventListener('click', () => {
+        console.log("[Admin] Login Attempt");
         if (passInput.value === ADMIN_PASS) {
             authPanel.style.display = 'none';
             dashboardPanel.style.display = 'block';
             AdminService.log('admin_login_success');
             if (typeof lucide !== 'undefined') lucide.createIcons();
         } else {
-            alert('Incorrect password!');
+            alert('Incorrect access key!');
             AdminService.log('admin_login_failed');
         }
-    };
+    });
 
-    passInput.onkeypress = (e) => { if (e.key === 'Enter') loginBtn.click(); };
+    passInput.addEventListener('keypress', (e) => { 
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            loginBtn.click();
+        }
+    });
 
     // Broadcast logic
     broadcastBtn.onclick = async () => {
