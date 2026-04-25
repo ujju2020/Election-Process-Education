@@ -29,26 +29,23 @@ The application follows a **Zero-Dependency Core** with a **Service-Controller p
 
 ## 🛠️ Technology Stack
 
-- **Core**: HTML5, Vanilla JavaScript (ES6+)
-- **Styling**: Modern CSS3 featuring Glassmorphism, Vibrant Gradients, and Fluid Typography.
-- **AI Integration**: **Google Gemini API** (`gemini-1.5-flash`) via secure proxy.
+- **Core**: HTML5, Vanilla JavaScript (ES6+ Module-based) with a custom **EventBus** for decoupled communication.
+- **Styling**: Premium CSS3 featuring Glassmorphism, **100dvh** mobile viewport units, and Safe Area Insets.
+- **AI Integration**: **Google Gemini API** (`gemini-1.5-flash`) via a secure, zero-latency Cloud Function proxy.
 - **Backend & Services (Google Firebase)**:
-    - **Cloud Functions (Node.js 24)**: Backend proxy for secure AI communication.
-    - **Secrets Manager**: Industrial-grade storage for API keys and credentials.
-    - **Hosting**: Global CDN deployment with custom **Content Security Policy (CSP)**.
-    - **Realtime Database**: Live syncing for election alerts and broadcasts.
-    - **Performance Monitoring**: Real-time tracking of app speed and network latency.
-    - **Remote Config**: Dynamic management of app versions and election phases from the cloud.
-    - **Analytics**: Comprehensive user interaction logging via `logEvent`.
-- **Testing**: Robust test suite using `node:test` and `node:assert`.
+    - **Cloud Functions (Node.js 24)**: Backend proxy for secure, secret-managed AI communication.
+    - **Hosting**: Global CDN with a custom **Bulletproof Cache-Busting Architecture** (`app.v3.js`).
+    - **Realtime Database**: Instant syncing for live election alerts and broadcasts.
+    - **Performance & Analytics**: Real-time telemetry tracking app speed and custom user events.
+    - **Remote Config**: Dynamic management of app phases and versioning from the cloud.
+- **PWA**: Advanced Service Worker (**v12**) with aggressive cache-reset and offline data fallback.
 
-## 📈 Quality & Security Criteria
+## 🚀 Production Quality & Security
 
-This project adheres to the highest standards (Targeting **90%+ Evaluation Score**):
-1. **Industrial Security**: Moved all API keys to the server-side. Implemented a strict **Content Security Policy (CSP)** and custom **XSS Sanitization Service**.
-2. **Performance**: Leverages **Service Worker v2** for optimized asset caching and instant load times.
-3. **Accessibility**: High-contrast design, ARIA labels, and screen-reader optimizations.
-4. **Testing**: 100% pass rate on integration and security test suites.
+1. **Fail-Safe Rendering**: Implemented a "Definitive Render" logic that ensures content is always visible even during network latency or security blocks.
+2. **Industrial Security**: Moved all API keys to the server-side via **Secret Manager**. Implemented a custom **XSS Sanitization Service** and "Access Key" re-branding.
+3. **Mobile Excellence**: Renamed core files and implemented timestamped data fetching to bypass aggressive mobile caching.
+4. **Interconnectivity**: Seamless top-right search integration that bridges the UI to the AI Assistant instantly.
 
 ## 🚀 Getting Started
 
