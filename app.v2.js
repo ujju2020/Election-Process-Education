@@ -185,13 +185,20 @@ function showToast(alertObj) {
             <h4>${SanitizerService.escapeHTML(alertObj.headline)}</h4>
             <p>${SanitizerService.escapeHTML(alertObj.desc)}</p>
         </div>
+        <button class="toast-close" aria-label="Close alert">&times;</button>
     `;
-    toast.onclick = () => {
-        window.switchTab('alerts');
+    toast.onclick = (e) => {
+        if (!e.target.closest('.toast-close')) {
+            window.switchTab('alerts');
+        }
         toast.remove();
     };
-    toast.querySelector('.toast-close').onclick = () => toast.remove();
-    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
+    const closeBtn = toast.querySelector('.toast-close');
+    if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); toast.remove(); };
+    
+    document.body.appendChild(toast);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 8000);
 }
 
 /** 
