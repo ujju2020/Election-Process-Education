@@ -502,12 +502,28 @@ window.switchTab = (id) => {
 
 async function initApp() {
     if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    // INSTANT ACTIVATION: Register nav and lang listeners immediately
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.onclick = () => window.switchTab(btn.dataset.tab);
+    });
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.onclick = () => switchLang(btn.dataset.lang);
+        if (btn.dataset.lang === State.currentLang) btn.classList.add('active');
+    });
+
+    document.querySelector('.profile-btn')?.addEventListener('click', () => {
+        const t = document.getElementById('info-modal-template');
+        if (!t) return;
+        const m = t.content.cloneNode(true).querySelector('.modal-overlay');
+        document.body.appendChild(m);
+        m.querySelector('.close-modal').onclick = () => m.remove();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+
     initFirebase();
     
-    // Performance Trace for score boost
-    const perfTrace = State.firebase.perf ? State.firebase.perf.trace('app_init') : null;
-    perfTrace?.start();
-
     // Register EventBus listeners for clean architecture
     EventBus.on('TAB_CHANGED', () => {
         UIController.render();
@@ -524,39 +540,14 @@ async function initApp() {
     });
 
     try {
-        const res = await fetch('data.json?v=4');
+        const res = await fetch('data.json?v=5');
         State.appData = await res.json();
     } catch (e) {
         console.warn("[MatdanSathi] Data load failed, using fallback.");
     }
     
     updateNavUI();
-    
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.onclick = () => switchLang(btn.dataset.lang);
-        if (btn.dataset.lang === State.currentLang) btn.classList.add('active');
-    });
-
-    document.querySelectorAll('.nav-item').forEach(btn => {
-        btn.onclick = () => window.switchTab(btn.dataset.tab);
-    });
-
-    document.querySelector('.profile-btn')?.addEventListener('click', () => {
-        const t = document.getElementById('info-modal-template');
-        if (!t) return;
-        const m = t.content.cloneNode(true).querySelector('.modal-overlay');
-        document.body.appendChild(m);
-        m.querySelector('.close-modal').onclick = () => m.remove();
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    });
-
-    document.querySelector('.search-btn')?.addEventListener('click', () => {
-        window.switchTab('assistant');
-        setTimeout(() => document.getElementById('chat-input')?.focus(), 50);
-    });
-
     window.switchTab('journey');
-    perfTrace?.stop();
 }
 
 if (document.readyState === 'loading') {
