@@ -554,6 +554,17 @@ async function initApp() {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     });
 
+    document.querySelector('.search-btn')?.addEventListener('click', () => {
+        window.switchTab('assistant');
+        setTimeout(() => {
+            const input = document.getElementById('chat-input');
+            if (input) {
+                input.focus();
+                input.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 100);
+    });
+
     initFirebase();
     
     // Register EventBus listeners for clean architecture
