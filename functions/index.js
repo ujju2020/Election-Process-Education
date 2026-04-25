@@ -14,6 +14,7 @@ const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
 exports.askGemini = onRequest({ 
     secrets: [GEMINI_API_KEY], 
     cors: true,
+    invoker: 'public',
     region: "us-central1" // Default region
 }, async (req, res) => {
     // Handle CORS preflight
