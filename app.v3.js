@@ -572,7 +572,7 @@ async function initApp() {
     });
 
     try {
-        const res = await fetch('data.json?v=5');
+        const res = await fetch('data.json?v=6&t=' + Date.now());
         State.appData = await res.json();
     } catch (e) {
         console.warn("[MatdanSathi] Data load failed, using fallback.");

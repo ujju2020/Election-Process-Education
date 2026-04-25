@@ -7,12 +7,11 @@ const ASSETS = [
     './',
     './index.html',
     './styles.css',
-    './app.v2.js',
+    './app.v3.js',
     './data.json',
     './manifest.json',
     'https://unpkg.com/lucide@latest',
-    'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
-    'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap'
+    'https://cdn.jsdelivr.net/npm/marked/marked.min.js'
 ];
 
 self.addEventListener('install', (event) => {
