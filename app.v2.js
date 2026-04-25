@@ -411,18 +411,26 @@ function renderAlerts(container) {
         };
     }
 
-    const list = container.querySelector('.alert-stack');
-    if (!list) return;
-    list.innerHTML = '';
-    State.mockAlerts.forEach(a => {
-        const isNew = a.id > State.maxReadAlertId;
-        const c = document.createElement('div');
-        c.className = `alert-card ${a.type} animate-up ${isNew ? 'new-alert' : ''}`;
-        c.tabIndex = 0;
-        c.setAttribute('role', 'status');
-        c.innerHTML = `<div class="alert-icon"><i data-lucide="${a.type === 'warning' ? 'alert-triangle' : 'info'}"></i></div><div class="alert-info"><h3>${SanitizerService.escapeHTML(a.headline)}</h3><p>${SanitizerService.escapeHTML(a.desc)}</p></div>`;
-        list.appendChild(c);
-    });
+    let list = container.querySelector('.alert-stack');
+    if (!list) {
+        // Fallback: Create the stack if the template is old/cached
+        list = document.createElement('div');
+        list.className = 'alert-stack';
+        container.querySelector('.view-section')?.appendChild(list);
+    }
+    
+    if (list) {
+        list.innerHTML = '';
+        State.mockAlerts.forEach(a => {
+            const isNew = a.id > State.maxReadAlertId;
+            const c = document.createElement('div');
+            c.className = `alert-card ${a.type} animate-up ${isNew ? 'new-alert' : ''}`;
+            c.tabIndex = 0;
+            c.setAttribute('role', 'status');
+            c.innerHTML = `<div class="alert-icon"><i data-lucide="${a.type === 'warning' ? 'alert-triangle' : 'info'}"></i></div><div class="alert-info"><h3>${SanitizerService.escapeHTML(a.headline)}</h3><p>${SanitizerService.escapeHTML(a.desc)}</p></div>`;
+            list.appendChild(c);
+        });
+    }
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
