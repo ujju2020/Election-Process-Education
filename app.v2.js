@@ -5,12 +5,12 @@
  * Copyright (c) 2026 Ujjwal Kumar Bhowmick. All rights reserved.
  */
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
-import { getPerformance } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-performance.js";
-import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-remote-config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
+import { getDatabase, ref, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
+import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js";
+import { getPerformance } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-performance.js";
+import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-remote-config.js";
 
 const FALLBACK_DATA = {
     en: {
