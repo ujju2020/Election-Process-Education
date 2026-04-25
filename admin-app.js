@@ -1,6 +1,7 @@
 /* 
  * Matdan Sathi - Election Process Education Assistant
- * Admin Dashboard Logic
+ * Copyright (c) 2026 Ujjwal Kumar Bhowmick (ujjwalkumarbhowmick30@gmail.com)
+ * All rights reserved.
  */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";

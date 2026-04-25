@@ -1,6 +1,7 @@
 /* 
  * Matdan Sathi - Election Process Education Assistant
- * Stability Rescue Module
+ * Copyright (c) 2026 Ujjwal Kumar Bhowmick (ujjwalkumarbhowmick30@gmail.com)
+ * All rights reserved.
  */
 console.log("[MatdanSathi] Script Load Started");
 
