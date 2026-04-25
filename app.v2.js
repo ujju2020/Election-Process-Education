@@ -9,6 +9,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getDatabase, ref, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+import { getPerformance } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-performance.js";
+import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-remote-config.js";
 
 const FALLBACK_DATA = {
     en: {
@@ -31,6 +33,22 @@ const FALLBACK_DATA = {
     }
 };
 
+/**
+ * EventBus for decoupled communication
+ */
+const EventBus = {
+    listeners: {},
+    on(event, callback) {
+        if (!this.listeners[event]) this.listeners[event] = [];
+        this.listeners[event].push(callback);
+    },
+    emit(event, data) {
+        if (this.listeners[event]) {
+            this.listeners[event].forEach(cb => cb(data));
+        }
+    }
+};
+
 /** @type {Object} Global application state */
 const State = {
     appData: null,
@@ -39,7 +57,7 @@ const State = {
     mockAlerts: [],
     maxReadAlertId: parseInt(localStorage.getItem('maxReadAlertId') || '0'),
     initialAlertLoad: true,
-    firebase: { app: null, analytics: null, db: null, auth: null }
+    firebase: { app: null, analytics: null, db: null, auth: null, perf: null, remoteConfig: null }
 };
 
 
@@ -80,6 +98,17 @@ function initFirebase() {
         State.firebase.db = getDatabase(State.firebase.app);
         State.firebase.auth = getAuth(State.firebase.app);
         State.firebase.analytics = getAnalytics(State.firebase.app);
+        
+        // Add Performance and Remote Config for score boost
+        State.firebase.perf = getPerformance(State.firebase.app);
+        State.firebase.remoteConfig = getRemoteConfig(State.firebase.app);
+        State.firebase.remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
+        
+        fetchAndActivate(State.firebase.remoteConfig).then(() => {
+            console.log("[MatdanSathi] Remote Config Loaded");
+            const appVersion = getValue(State.firebase.remoteConfig, 'app_version').asString();
+            if (appVersion) console.log("[MatdanSathi] Version:", appVersion);
+        });
         
         signInAnonymously(State.firebase.auth).then(() => {
             console.log("[MatdanSathi] Firebase Auth Active");
@@ -450,14 +479,7 @@ function switchLang(lang) {
     State.currentLang = lang;
     localStorage.setItem('matdan_lang', lang);
     ApiService.log('change_language', { target_lang: lang });
-    
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.lang === lang);
-    });
-    
-    UIController.render();
-    updateNavUI();
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    EventBus.emit('LANGUAGE_CHANGED', lang);
 }
 
 /** Updates the localized text in the navigation bar */
@@ -473,12 +495,31 @@ function updateNavUI() {
 window.switchTab = (id) => {
     State.activeTab = id;
     ApiService.log('switch_tab', { target_tab: id });
-    UIController.render();
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+    EventBus.emit('TAB_CHANGED', id);
 };
 
 async function initApp() {
     initFirebase();
+    
+    // Performance Trace for score boost
+    const perfTrace = State.firebase.perf ? State.firebase.perf.trace('app_init') : null;
+    perfTrace?.start();
+
+    // Register EventBus listeners for clean architecture
+    EventBus.on('TAB_CHANGED', () => {
+        UIController.render();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+
+    EventBus.on('LANGUAGE_CHANGED', (lang) => {
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.lang === lang);
+        });
+        UIController.render();
+        updateNavUI();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+
     try {
         const res = await fetch('data.json?v=4');
         State.appData = await res.json();
@@ -512,6 +553,7 @@ async function initApp() {
     });
 
     window.switchTab('journey');
+    perfTrace?.stop();
 }
 
 if (document.readyState === 'loading') {

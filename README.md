@@ -20,9 +20,10 @@ This solution addresses the "Education" vertical by simplifying the complexities
 
 ## 🧠 Approach & Logic
 
-The application follows a **Zero-Dependency Core** with a **Service-Controller pattern**, ensuring high performance and maintainability:
+The application follows a **Zero-Dependency Core** with a **Service-Controller pattern** and a custom **EventBus**, ensuring high performance and maintainability:
 1. **Dynamic Localization**: A centralized `data.json` management system allows for 100% UI translation on-the-fly without page reloads.
-2. **Secure AI Proxy**: The Assistant uses a **Firebase Cloud Function** backend. This architecture hides the Gemini API key from the client-side, preventing leaks and ensuring industrial-grade security.
+2. **Decoupled Architecture**: Uses an internal **EventBus** for component communication, allowing for clean, modular updates to the UI and state.
+3. **Secure AI Proxy**: The Assistant uses a **Firebase Cloud Function** backend. This architecture hides the Gemini API key from the client-side, preventing leaks and ensuring industrial-grade security.
 3. **Real-Time Synchronization**: The Admin Dashboard connects directly to **Firebase Realtime Database**, using a push-based model to ensure users receive election alerts in under 200ms.
 4. **State management**: Centralized `State` object for reliable tracking of language, navigation, and Firebase services.
 
@@ -36,7 +37,9 @@ The application follows a **Zero-Dependency Core** with a **Service-Controller p
     - **Secrets Manager**: Industrial-grade storage for API keys and credentials.
     - **Hosting**: Global CDN deployment with custom **Content Security Policy (CSP)**.
     - **Realtime Database**: Live syncing for election alerts and broadcasts.
-    - **Analytics**: Deep user interaction logging via `logEvent`.
+    - **Performance Monitoring**: Real-time tracking of app speed and network latency.
+    - **Remote Config**: Dynamic management of app versions and election phases from the cloud.
+    - **Analytics**: Comprehensive user interaction logging via `logEvent`.
 - **Testing**: Robust test suite using `node:test` and `node:assert`.
 
 ## 📈 Quality & Security Criteria
