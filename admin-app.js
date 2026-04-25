@@ -1,8 +1,9 @@
-/* 
- * Matdan Sathi - Election Process Education Assistant
- * Copyright (c) 2026 Ujjwal Kumar Bhowmick (ujjwalkumarbhowmick30@gmail.com)
- * All rights reserved.
+/**
+ * @file admin-app.js
+ * @description Admin Dashboard controller for Matdan Sathi.
+ * Copyright (c) 2026 Ujjwal Kumar Bhowmick. All rights reserved.
  */
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -19,15 +20,15 @@ const firebaseConfig = {
     measurementId: "G-ZH85HCNMFB"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
-const analytics = getAnalytics(app);
+/** @type {Object} Global application state */
+const State = {
+    appData: null,
+    currentLang: localStorage.getItem('matdan_lang') || 'en',
+    firebase: { app: null, analytics: null, db: null, auth: null }
+};
 
 const ADMIN_PASS = "Ujju@3006#";
 
-let appData = null;
-let currentLang = localStorage.getItem('matdan_lang') || 'en';
 
 const FALLBACK_ADMIN_UI = {
     admin_login_title: "Admin Login",
@@ -46,11 +47,41 @@ const FALLBACK_ADMIN_UI = {
     admin_broadcast_btn: "Broadcast to All Users"
 };
 
-const getUI = () => appData?.[currentLang]?.ui || FALLBACK_ADMIN_UI;
+/**
+ * Admin API Service
+ */
+const AdminService = {
+    init() {
+        State.firebase.app = initializeApp(firebaseConfig);
+        State.firebase.db = getDatabase(State.firebase.app);
+        State.firebase.auth = getAuth(State.firebase.app);
+        State.firebase.analytics = getAnalytics(State.firebase.app);
+        signInAnonymously(State.firebase.auth);
+    },
+    log(eventName, params = {}) {
+        if (State.firebase.analytics) logEvent(State.firebase.analytics, eventName, params);
+    },
+    async broadcast(headline, desc, type) {
+        if (!State.firebase.db) return;
+        const alertRef = ref(State.firebase.db, 'live_alerts');
+        await push(alertRef, {
+            id: Date.now(),
+            headline,
+            desc,
+            type,
+            timestamp: new Date().toISOString()
+        });
+        this.log('admin_broadcast_success', { type });
+    }
+};
 
+const getUI = () => State.appData?.[State.currentLang]?.ui || FALLBACK_ADMIN_UI;
+
+
+/** Refreshes the Admin UI with localized strings */
 function updateAdminUI() {
     const ui = getUI();
-    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === State.currentLang));
 
     const els = {
         'ui-login-title': ui.admin_login_title,
@@ -81,31 +112,31 @@ function updateAdminUI() {
     if (descInput && ui.admin_desc_ph) descInput.placeholder = ui.admin_desc_ph;
 }
 
+/** Initializes the language data for the admin dashboard */
 async function initAdminLang() {
-    const resp = await fetch('data.json?v=' + Date.now()).catch(() => null);
-    if (resp && resp.ok) appData = await resp.json();
+    try {
+        const resp = await fetch('data.json?v=' + Date.now());
+        if (resp && resp.ok) State.appData = await resp.json();
+    } catch (e) {
+        console.warn("[Admin] Data load failed");
+    }
     updateAdminUI();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    AdminService.init();
     initAdminLang();
 
     document.querySelectorAll('.lang-btn').forEach(b => {
         b.onclick = () => {
-            currentLang = b.dataset.lang;
-            localStorage.setItem('matdan_lang', currentLang);
+            State.currentLang = b.dataset.lang;
+            localStorage.setItem('matdan_lang', State.currentLang);
+            AdminService.log('admin_change_lang', { lang: State.currentLang });
             updateAdminUI();
         };
     });
-    const authPanel = document.getElementById('auth-panel');
-    const dashboardPanel = document.getElementById('dashboard-panel');
-    const loginBtn = document.getElementById('login-btn');
-    const passInput = document.getElementById('admin-pass');
-    const broadcastBtn = document.getElementById('broadcast-btn');
-    const statusMsg = document.getElementById('status-msg');
 
-    // Attempt Anonymous Sign-in for database access
-    signInAnonymously(auth).then(() => {
+    const authPanel = document.getElementById('auth-panel');
         console.log("[Admin] Firebase Auth Session Active");
     }).catch(e => {
         console.error("[Admin] Auth error:", e.message);

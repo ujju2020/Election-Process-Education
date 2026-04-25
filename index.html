@@ -8,6 +8,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://www.gstatic.com; connect-src 'self' https://generativelanguage.googleapis.com https://*.googleapis.com wss://*.firebaseio.com https://*.firebaseio.com;">
     <title>Election Process Education Assistant</title>
     <meta name="description" content="Learn about the election process in India through this interactive guided assistant. Fast, accessible, and offline-ready.">
     
@@ -118,7 +119,7 @@
     <template id="assistant-view-template">
         <section class="view-section full-height">
             <div class="chat-container glass-panel">
-                <div class="chat-messages" id="chat-messages">
+                <div class="chat-messages" id="chat-messages" aria-live="polite">
                     <div class="assistant-msg animate-up">
                         <div class="avatar"><i data-lucide="bot"></i></div>
                         <div class="msg-bubble">
