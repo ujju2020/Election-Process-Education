@@ -17,6 +17,7 @@ let appData = null;
 let currentLang = localStorage.getItem('matdan_lang') || 'en';
 let activeTab = 'journey';
 let MOCK_ALERTS = [];
+let maxReadAlertId = parseInt(localStorage.getItem('maxReadAlertId') || '0');
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, onValue, limitToLast, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -44,9 +45,23 @@ function initFirebase() {
         signInAnonymously(auth).then(() => {
             console.log("[MatdanSathi] Firebase Auth Active");
             setupLiveAlerts();
-        }).catch((e) => console.warn("[MatdanSathi] Auth failed", e.message));
+        }).catch((e) => {
+            console.warn("[MatdanSathi] Auth failed", e.message);
+            setupLiveAlerts();
+        });
     } catch (e) {
         console.warn("[MatdanSathi] Firebase Init Failed:", e.message);
+    }
+}
+
+let initialAlertLoad = true;
+
+function updateAlertsBadge() {
+    const badge = document.querySelector('.notification-badge');
+    if (badge) {
+        const count = MOCK_ALERTS.filter(a => a.id > maxReadAlertId).length;
+        badge.innerText = count;
+        badge.style.display = count > 0 ? 'flex' : 'none';
     }
 }
 
@@ -57,16 +72,39 @@ function setupLiveAlerts() {
         if (snapshot.exists()) {
             const data = snapshot.val();
             const newAlerts = Object.values(data).sort((a,b) => b.id - a.id);
-            MOCK_ALERTS = newAlerts;
-            const badge = document.querySelector('.notification-badge');
-            if (badge) {
-                const count = MOCK_ALERTS.filter(a => a.unread).length;
-                badge.innerText = count;
-                badge.style.display = count > 0 ? 'flex' : 'none';
+            if (!initialAlertLoad) {
+                const prevLatest = MOCK_ALERTS.length > 0 ? MOCK_ALERTS[0].id : 0;
+                const incoming = newAlerts.filter(a => a.id > prevLatest);
+                incoming.forEach(a => showToastAlert(a));
             }
+            initialAlertLoad = false;
+            MOCK_ALERTS = newAlerts;
+            updateAlertsBadge();
             if (activeTab === 'alerts') window.switchTab('alerts');
         }
     });
+}
+
+function showToastAlert(alertObj) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-alert animate-up';
+    toast.innerHTML = `
+        <div class="toast-icon ${escapeHTML(alertObj.type)}"><i data-lucide="${alertObj.type === 'warning' ? 'alert-triangle' : 'info'}"></i></div>
+        <div class="toast-content">
+            <h4>${escapeHTML(alertObj.title)}</h4>
+            <p>${escapeHTML(alertObj.desc)}</p>
+        </div>
+        <button class="toast-close"><i data-lucide="x"></i></button>
+    `;
+    document.body.appendChild(toast);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    toast.onclick = (e) => {
+        if (e.target.closest('.toast-close')) return;
+        window.switchTab('alerts');
+        toast.remove();
+    };
+    toast.querySelector('.toast-close').onclick = () => toast.remove();
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
 }
 
 function escapeHTML(str) {
@@ -82,12 +120,29 @@ function renderJourney(container) {
     container.innerHTML = '';
     container.appendChild(t.content.cloneNode(true));
     const ui = getUI();
+    const headerTitle = container.querySelector('.section-header h2');
+    const headerDesc = container.querySelector('.section-header p');
+    if (headerTitle && ui.journey_title) headerTitle.innerText = ui.journey_title;
+    if (headerDesc && ui.journey_desc) headerDesc.innerText = ui.journey_desc;
+    
     const list = container.querySelector('.timeline-container');
     const data = appData?.[currentLang]?.journey || FALLBACK_DATA.en.journey;
     data.forEach(s => {
         const c = document.createElement('div');
         c.className = 'timeline-card animate-up';
-        c.innerHTML = `<div class="step-num">${s.id}</div><div class="step-content"><h3>${escapeHTML(s.title)}</h3><p>${escapeHTML(s.desc)}</p></div>`;
+        const btnText = ui.view_details || "View Details";
+        c.innerHTML = `<div class="step-num">${s.id}</div><div class="step-content"><h3>${escapeHTML(s.title)}</h3><p>${escapeHTML(s.desc)}</p><button class="ballot-btn" style="margin-top:10px; border:none; cursor:pointer; font-family:inherit; padding:6px 14px; font-size:0.8rem;">${escapeHTML(btnText)}</button></div>`;
+        c.querySelector('.ballot-btn').onclick = () => {
+            window.switchTab('assistant');
+            setTimeout(() => {
+                const input = document.getElementById('chat-input');
+                const sendBtn = document.querySelector('.send-btn');
+                if (input && sendBtn) {
+                    input.value = `Tell me more about the election step: ${s.title}`;
+                    sendBtn.click();
+                }
+            }, 50);
+        };
         list.appendChild(c);
     });
 }
@@ -97,23 +152,65 @@ function renderAssistant(container) {
     if (!t) return;
     container.innerHTML = '';
     container.appendChild(t.content.cloneNode(true));
+    const ui = getUI();
     const input = document.getElementById('chat-input');
+    if (input && ui.ask_placeholder) input.placeholder = ui.ask_placeholder;
     const msgArea = document.getElementById('chat-messages');
-    container.querySelector('.send-btn').onclick = () => {
+    const msgBubble = container.querySelector('.assistant-msg .msg-bubble');
+    if (msgBubble && ui.assistant_greeting) msgBubble.innerText = ui.assistant_greeting;
+    const sendBtn = container.querySelector('.send-btn');
+    if (input && sendBtn) {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendBtn.click();
+            }
+        });
+    }
+
+    sendBtn.onclick = async () => {
         const val = input.value.trim();
         if (!val) return;
+        
         const uMsg = document.createElement('div');
         uMsg.className = 'user-msg assistant-msg animate-up';
         uMsg.innerHTML = `<div class="msg-bubble">${escapeHTML(val)}</div>`;
         msgArea.appendChild(uMsg);
         input.value = '';
-        setTimeout(() => {
-            const bot = document.createElement('div');
-            bot.className = 'assistant-msg animate-up';
-            bot.innerHTML = `<div class="avatar"><i data-lucide="bot"></i></div><div class="msg-bubble">Processing query... (Offline)</div>`;
-            msgArea.appendChild(bot);
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }, 800);
+        msgArea.scrollTop = msgArea.scrollHeight;
+
+        const bot = document.createElement('div');
+        bot.className = 'assistant-msg animate-up';
+        bot.innerHTML = `<div class="avatar"><i data-lucide="bot"></i></div><div class="msg-bubble loading-bubble">${escapeHTML(ui.assistant_processing || "Processing query...")}</div>`;
+        msgArea.appendChild(bot);
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        msgArea.scrollTop = msgArea.scrollHeight;
+
+        try {
+            const langContext = currentLang === 'hi' ? 'Respond in Hindi.' : currentLang === 'bn' ? 'Respond in Bengali.' : 'Respond in English.';
+            const systemInstruction = `You are Matdan Sathi, an expert on the Indian Election Process. Keep your answers concise, helpful, and neutral. ${langContext}`;
+            
+            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyDMx5BLN1AWbFppDT14cqE_INgea3dQXWg', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    system_instruction: { parts: { text: systemInstruction } },
+                    contents: [{ parts: [{ text: val }] }]
+                })
+            });
+
+            if (!response.ok) throw new Error('API Error');
+            const data = await response.json();
+            const text = data.candidates[0].content.parts[0].text;
+            
+            const bubble = bot.querySelector('.msg-bubble');
+            bubble.classList.remove('loading-bubble');
+            bubble.innerHTML = typeof marked !== 'undefined' ? marked.parse(text) : escapeHTML(text);
+        } catch (e) {
+            console.error(e);
+            bot.querySelector('.msg-bubble').innerText = "Sorry, I am currently offline. Please try again later.";
+        }
+        msgArea.scrollTop = msgArea.scrollHeight;
     };
 }
 
@@ -122,6 +219,21 @@ function renderVote(container) {
     if (!t) return;
     container.innerHTML = '';
     container.appendChild(t.content.cloneNode(true));
+    const ui = getUI();
+    const title = document.getElementById('vote-title');
+    const desc = document.getElementById('vote-desc');
+    if (title && ui.vote_title) title.innerText = ui.vote_title;
+    if (desc && ui.vote_desc) desc.innerText = ui.vote_desc;
+    const cuHeader = container.querySelector('.cu-header');
+    if (cuHeader && ui.control_unit) cuHeader.innerText = ui.control_unit;
+    const busySpan = container.querySelector('.cu-status span');
+    if (busySpan && ui.busy) busySpan.innerText = ui.busy;
+    const ballotBtn = document.getElementById('ballot-trigger');
+    if (ballotBtn && ui.ballot) ballotBtn.innerText = ui.ballot;
+    const buHeaderSpan = container.querySelector('.bu-header span');
+    if (buHeaderSpan && ui.balloting_unit) buHeaderSpan.innerText = ui.balloting_unit;
+    const vvpatHeader = container.querySelector('.vvpat-header');
+    if (vvpatHeader && ui.vvpat) vvpatHeader.innerText = ui.vvpat;
     const bu = document.getElementById('bu-candidates');
     const cands = appData?.[currentLang]?.candidates || FALLBACK_DATA.en.candidates;
     const upd = (act) => {
@@ -152,6 +264,17 @@ function renderVote(container) {
 function renderReadiness(container) {
     const ui = getUI();
     container.innerHTML = `<section class="view-section"><h2>${ui.readiness}</h2><div class="readiness-list timeline-container"></div></section>`;
+    const list = container.querySelector('.readiness-list');
+    const rData = appData?.[currentLang]?.readiness || FALLBACK_DATA.en.readiness;
+    if (rData && list) {
+        rData.forEach(r => {
+            const c = document.createElement('div');
+            c.className = 'timeline-card animate-up';
+            c.innerHTML = `<div class="step-num"><i data-lucide="check"></i></div><div class="step-content"><h3>${escapeHTML(r.title)}</h3><p>${escapeHTML(r.desc)}</p><a href="${escapeHTML(r.url)}" target="_blank" class="ballot-btn" style="display:inline-block; margin-top:10px; text-decoration:none; padding:8px 16px; font-size:0.85rem;">${escapeHTML(r.action)}</a></div>`;
+            list.appendChild(c);
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
 }
 
 function renderAlerts(container) {
@@ -159,14 +282,32 @@ function renderAlerts(container) {
     if (!t || !container) return;
     container.innerHTML = '';
     container.appendChild(t.content.cloneNode(true));
+    const ui = getUI();
+    const h2 = container.querySelector('.header-main h2');
+    const p = container.querySelector('.header-main p');
+    if (h2 && ui.alerts_title) h2.innerText = ui.alerts_title;
+    if (p && ui.alerts_desc) p.innerText = ui.alerts_desc;
+    const markBtn = container.querySelector('.text-btn');
+    if (markBtn) {
+        if (ui.mark_read) markBtn.innerText = ui.mark_read;
+        markBtn.onclick = () => {
+            if (MOCK_ALERTS.length > 0) {
+                maxReadAlertId = MOCK_ALERTS[0].id;
+                localStorage.setItem('maxReadAlertId', maxReadAlertId);
+                updateAlertsBadge();
+                window.switchTab('alerts');
+            }
+        };
+    }
     const list = container.querySelector('.alerts-list');
     if (!list) return;
     if (MOCK_ALERTS.length === 0) {
-        list.innerHTML = '<div class="glass-panel" style="padding:20px; text-align:center;">No live alerts right now.</div>';
+        list.innerHTML = `<div class="glass-panel" style="padding:20px; text-align:center;">${escapeHTML(ui.no_alerts || "No live alerts right now.")}</div>`;
     } else {
         MOCK_ALERTS.forEach(a => {
+            const isUnread = a.id > maxReadAlertId;
             const c = document.createElement('div');
-            c.className = `alert-card glass-panel ${a.unread ? 'unread' : ''}`;
+            c.className = `alert-card glass-panel ${isUnread ? 'unread' : ''}`;
             c.innerHTML = `<div class="alert-icon ${escapeHTML(a.type)}"><i data-lucide="${a.type === 'warning' ? 'alert-triangle' : 'info'}"></i></div><div class="alert-content"><h4>${escapeHTML(a.title)}</h4><p>${escapeHTML(a.desc)}</p></div>`;
             list.appendChild(c);
         });
@@ -192,18 +333,34 @@ window.switchTab = (id) => {
 async function start() {
     console.log("[MatdanSathi] Starting init...");
     initFirebase();
-    const resp = await fetch('data.json').catch(() => null);
+    const resp = await fetch('data.json?v=3').catch(() => null);
     if (resp && resp.ok) appData = await resp.json();
     
-    const ui = getUI();
-    const map = { journey: ui.journey, assistant: ui.assistant, vote: ui.vote || 'Vote', readiness: ui.readiness, alerts: ui.alerts };
-    Object.entries(map).forEach(([k, v]) => {
-        const s = document.querySelector(`[data-tab="${k}"] span`);
-        if (s) s.innerText = v;
-    });
+    const updateNavUI = () => {
+        const ui = getUI();
+        const map = { journey: ui.journey, assistant: ui.assistant, vote: ui.vote || 'Vote', readiness: ui.readiness, alerts: ui.alerts };
+        Object.entries(map).forEach(([k, v]) => {
+            const s = document.querySelector(`[data-tab="${k}"] span`);
+            if (s) s.innerText = v;
+        });
+    };
+    updateNavUI();
 
     document.querySelectorAll('.nav-item').forEach(n => n.onclick = () => window.switchTab(n.dataset.tab));
-    document.querySelectorAll('.lang-btn').forEach(b => b.onclick = () => { currentLang = b.dataset.lang; localStorage.setItem('matdan_lang', currentLang); window.switchTab(activeTab); });
+    const updateLangUI = () => {
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
+    };
+
+    document.querySelectorAll('.lang-btn').forEach(b => {
+        b.onclick = () => {
+            currentLang = b.dataset.lang;
+            localStorage.setItem('matdan_lang', currentLang);
+            updateLangUI();
+            updateNavUI();
+            window.switchTab(activeTab);
+        };
+    });
+    updateLangUI();
     
     const pbtn = document.querySelector('.profile-btn');
     if (pbtn) pbtn.onclick = () => {
@@ -214,6 +371,17 @@ async function start() {
         m.querySelector('.close-modal').onclick = () => m.remove();
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
+
+    const sbtn = document.querySelector('.search-btn');
+    if (sbtn) {
+        sbtn.onclick = () => {
+            window.switchTab('assistant');
+            setTimeout(() => {
+                const input = document.getElementById('chat-input');
+                if (input) input.focus();
+            }, 50);
+        };
+    }
 
     console.log("[MatdanSathi] Init complete. UI Ready.");
     window.switchTab('journey');

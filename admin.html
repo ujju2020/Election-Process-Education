@@ -50,41 +50,50 @@
 </head>
 <body class="admin-body">
     <div class="app-container">
+        <!-- Language Header -->
+        <header class="glass-header" style="justify-content: flex-end; padding: 15px 20px; background: transparent; border-bottom: none;">
+            <div class="lang-selector">
+                <button class="lang-btn active" data-lang="en">EN</button>
+                <button class="lang-btn" data-lang="hi">HI</button>
+                <button class="lang-btn" data-lang="bn">BN</button>
+            </div>
+        </header>
+
         <!-- Auth Panel -->
         <div id="auth-panel" class="admin-login-panel glass-panel animate-up">
             <i data-lucide="shield-check" style="width: 48px; height: 48px; color: var(--primary); margin-bottom: 20px;"></i>
-            <h2>Admin Login</h2>
-            <p style="margin-bottom: 24px; color: var(--text-muted);">Enter password to broadcast alerts</p>
+            <h2 id="ui-login-title">Admin Login</h2>
+            <p id="ui-login-desc" style="margin-bottom: 24px; color: var(--text-muted);">Enter password to broadcast alerts</p>
             <input type="password" id="admin-pass" placeholder="Enter Password">
-            <button id="login-btn" class="primary-btn" style="width: 100%; margin-top: 20px;">Unlock Dashboard</button>
+            <button id="login-btn" class="primary-btn" style="width: 100%; margin-top: 20px;"><span id="ui-login-btn">Unlock Dashboard</span></button>
         </div>
 
         <!-- Dashboard Panel -->
         <div id="dashboard-panel" class="admin-main animate-up">
             <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-                <h1>Alert Broadcast</h1>
-                <button class="text-btn" onclick="location.href='index.html'">View Site</button>
+                <h1 id="ui-admin-header">Alert Broadcast</h1>
+                <button class="text-btn" onclick="location.href='index.html'" id="ui-view-site">View Site</button>
             </header>
 
             <div class="glass-panel" style="padding: 30px;">
                 <div class="form-group">
-                    <label>Alert Type</label>
+                    <label id="ui-alert-type">Alert Type</label>
                     <select id="alert-type">
-                        <option value="info">Information (Blue)</option>
-                        <option value="warning">Warning (Yellow/Red)</option>
+                        <option value="info" id="ui-type-info">Information (Blue)</option>
+                        <option value="warning" id="ui-type-warn">Warning (Yellow/Red)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Headline</label>
+                    <label id="ui-headline">Headline</label>
                     <input type="text" id="alert-title" placeholder="e.g., Heavy Rain Warning">
                 </div>
                 <div class="form-group">
-                    <label>Description</label>
+                    <label id="ui-desc">Description</label>
                     <textarea id="alert-desc" rows="4" placeholder="Enter full details..."></textarea>
                 </div>
                 <button id="broadcast-btn" class="primary-btn" style="width: 100%;">
                     <i data-lucide="send"></i>
-                    <span>Broadcast to All Users</span>
+                    <span id="ui-broadcast-btn">Broadcast to All Users</span>
                 </button>
             </div>
 
