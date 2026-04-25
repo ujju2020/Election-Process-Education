@@ -106,20 +106,22 @@ function initFirebase() {
         
         fetchAndActivate(State.firebase.remoteConfig).then(() => {
             console.log("[MatdanSathi] Remote Config Loaded");
-            const appVersion = getValue(State.firebase.remoteConfig, 'app_version').asString();
-            if (appVersion) console.log("[MatdanSathi] Version:", appVersion);
         });
         
+        // FAIL-SAFE: Setup alerts and render immediately
+        setupLiveAlerts();
+        UIController.render(); 
+
         signInAnonymously(State.firebase.auth).then(() => {
             console.log("[MatdanSathi] Firebase Auth Active");
             ApiService.log('app_start');
-            setupLiveAlerts();
         }).catch((e) => {
-            console.warn("[MatdanSathi] Auth failed", e.message);
-            setupLiveAlerts();
+            console.warn("[MatdanSathi] Auth failed (expected if CSP blocks it):", e.message);
         });
     } catch (e) {
         console.warn("[MatdanSathi] Firebase Init Failed:", e.message);
+        setupLiveAlerts();
+        UIController.render();
     }
 }
 
@@ -499,6 +501,7 @@ window.switchTab = (id) => {
 };
 
 async function initApp() {
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     initFirebase();
     
     // Performance Trace for score boost
