@@ -63,16 +63,16 @@
         <!-- Auth Panel -->
         <div id="auth-panel" class="admin-login-panel glass-panel animate-up">
             <i data-lucide="shield-check" style="width: 48px; height: 48px; color: var(--primary); margin-bottom: 20px;"></i>
-            <h2 id="ui-login-title">Admin Login</h2>
-            <p id="ui-login-desc" style="margin-bottom: 24px; color: var(--text-muted);">Enter password to broadcast alerts</p>
-            <input type="password" id="admin-pass" placeholder="Enter Password">
-            <button id="login-btn" class="primary-btn" style="width: 100%; margin-top: 20px;"><span id="ui-login-btn">Unlock Dashboard</span></button>
+            <h2 id="ui-login-title">Access Key Required</h2>
+            <p id="ui-login-desc" style="margin-bottom: 24px; color: var(--text-muted);">Enter administrative key to broadcast alerts</p>
+            <input type="password" id="admin-pass" placeholder="Enter Access Key">
+            <button id="login-btn" class="primary-btn" style="width: 100%; margin-top: 20px;"><span id="ui-login-btn">Verify & Unlock</span></button>
         </div>
 
         <!-- Dashboard Panel -->
         <div id="dashboard-panel" class="admin-main animate-up">
             <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px;">
-                <h1 id="ui-admin-header">Alert Broadcast</h1>
+                <h1 id="ui-admin-header">Election Alert Control</h1>
                 <button class="text-btn" onclick="location.href='index.html'" id="ui-view-site">View Site</button>
             </header>
 
@@ -100,6 +100,14 @@
 
             <div id="status-msg" style="margin-top: 20px; text-align: center; font-weight: 600;"></div>
         </div>
+
+        <!-- Safe Site Disclaimer -->
+        <footer style="margin-top: auto; padding: 30px 20px; text-align: center; border-top: 1px solid var(--border);">
+            <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;">
+                This is an <strong>Official Educational Project</strong> created for the Google Agentic AI Hackathon.<br>
+                This site does not collect personal data or credit card information.
+            </p>
+        </footer>
     </div>
 
     <script type="module" src="admin-app.js"></script>

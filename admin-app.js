@@ -30,11 +30,11 @@ const State = {
 const ADMIN_PASS = "Ujju@3006#";
 
 const FALLBACK_ADMIN_UI = {
-    admin_login_title: "Admin Login",
-    admin_login_desc: "Enter password to broadcast alerts",
-    admin_login_pass: "Enter Password",
-    admin_login_btn: "Unlock Dashboard",
-    admin_header: "Alert Broadcast",
+    admin_login_title: "Dashboard Access",
+    admin_login_desc: "Enter your secure access key to manage alerts",
+    admin_login_pass: "Enter Access Key",
+    admin_login_btn: "Verify & Unlock",
+    admin_header: "Election Alert Control",
     admin_view_site: "View Site",
     admin_alert_type: "Alert Type",
     admin_type_info: "Information (Blue)",
