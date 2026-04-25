@@ -2,7 +2,7 @@
  * Matdan Sathi - Election Process Education Assistant
  * Developer - Ujjwal Kumar Bhowmick (ujjwalkumarbhowmick30@gmail.com)
  */
-const CACHE_NAME = 'matdan-sathi-v5';
+const CACHE_NAME = 'matdan-sathi-v6';
 const ASSETS = [
     './',
     './index.html',
