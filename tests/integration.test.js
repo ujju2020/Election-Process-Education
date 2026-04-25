@@ -56,3 +56,29 @@ test('Security Logic: escapeHTML handles multiple vectors', () => {
     assert.ok(output.includes('&amp;'));
     assert.ok(output.includes('&quot;'));
 });
+test('ApiService: askGemini calls the backend proxy', async () => {
+    const mockResponse = { text: "AI Response" };
+    global.fetch = async (url, options) => {
+        assert.ok(url.includes('run.app')); // Verify it calls the proxy
+        assert.strictEqual(options.method, 'POST');
+        return {
+            ok: true,
+            json: async () => mockResponse
+        };
+    };
+
+    const ApiService = {
+        async askGemini(prompt, lang) {
+            const response = await fetch('https://askgemini-5mdviaaetq-uc.a.run.app', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt, lang })
+            });
+            const data = await response.json();
+            return data.text;
+        }
+    };
+
+    const result = await ApiService.askGemini('hello', 'en');
+    assert.strictEqual(result, "AI Response");
+});

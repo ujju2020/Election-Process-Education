@@ -6,7 +6,7 @@
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
@@ -38,14 +38,10 @@ const State = {
     activeTab: 'journey',
     mockAlerts: [],
     maxReadAlertId: parseInt(localStorage.getItem('maxReadAlertId') || '0'),
+    initialAlertLoad: true,
     firebase: { app: null, analytics: null, db: null, auth: null }
 };
 
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, onValue, limitToLast, query } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBHVhvLjTGXJHAfyiJAfqglZEmvSmN43bk",
@@ -99,7 +95,6 @@ function initFirebase() {
 }
 
 
-let initialAlertLoad = true;
 
 function updateAlertsBadge() {
     const badge = document.querySelector('.notification-badge');
@@ -121,10 +116,10 @@ function setupLiveAlerts() {
             updateAlertsBadge();
             if (State.activeTab === 'alerts') UIController.render();
             
-            if (!initialAlertLoad && State.mockAlerts.length > 0) {
+            if (!State.initialAlertLoad && State.mockAlerts.length > 0) {
                 showToast(State.mockAlerts[0]);
             }
-            initialAlertLoad = false;
+            State.initialAlertLoad = false;
         }
     });
 }
@@ -151,12 +146,13 @@ function showToast(alertObj) {
     setTimeout(() => { if (toast.parentNode) toast.remove(); }, 5000);
 }
 
-function escapeHTML(str) {
-    if (typeof str !== 'string') return str || '';
-    return str.replace(/[&<>'"]/g, t => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[t] || t));
+/** 
+ * Returns the UI strings for the current language
+ * @returns {Object} UI tokens
+ */
+function getUI() {
+    return State.appData?.[State.currentLang]?.ui || FALLBACK_DATA.en.ui;
 }
-
-const getUI = () => appData?.[currentLang]?.ui || FALLBACK_DATA.en.ui;
 
 function renderJourney(container) {
     const t = document.getElementById('journey-view-template');
@@ -386,27 +382,28 @@ const ApiService = {
      * @param {string} lang - Selected language
      * @returns {Promise<string>} AI response
      */
+    /**
+     * Fetches responses from Gemini AI via secure backend proxy
+     * @param {string} prompt - User query
+     * @param {string} lang - Selected language
+     * @returns {Promise<string>} AI response
+     */
     async askGemini(prompt, lang) {
-        const langContext = lang === 'hi' ? 'Respond in Hindi.' : lang === 'bn' ? 'Respond in Bengali.' : 'Respond in English.';
-        const systemInstruction = `You are Matdan Sathi, an expert on the Indian Election Process. Keep your answers concise, helpful, and neutral. ${langContext}`;
-        
         try {
-            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCTi8JZUSd76Y0BIY75xJ4n9soI2pXAKPg', {
+            const response = await fetch('https://askgemini-5mdviaaetq-uc.a.run.app', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    system_instruction: { parts: { text: systemInstruction } },
-                    contents: [{ parts: [{ text: prompt }] }]
-                })
+                body: JSON.stringify({ prompt, lang })
             });
-            if (!response.ok) throw new Error('Gemini API Error');
+            if (!response.ok) throw new Error('Cloud Function Error');
             const data = await response.json();
-            return data.candidates[0].content.parts[0].text;
+            return data.text;
         } catch (e) {
-            console.error("[ApiService] Gemini Error:", e);
+            console.error("[ApiService] Proxy Error:", e);
             throw e;
         }
     },
+
 
     /** Logs custom events to Firebase Analytics */
     log(eventName, params = {}) {
@@ -445,73 +442,80 @@ const UIController = {
     }
 };
 
+/** 
+ * Switches the application language
+ * @param {string} lang - Language code (en/hi/bn)
+ */
+function switchLang(lang) {
+    State.currentLang = lang;
+    localStorage.setItem('matdan_lang', lang);
+    ApiService.log('change_language', { target_lang: lang });
+    
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+    
+    UIController.render();
+    updateNavUI();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+/** Updates the localized text in the navigation bar */
+function updateNavUI() {
+    const ui = getUI();
+    const map = { journey: ui.journey, assistant: ui.assistant, vote: ui.vote || 'Vote', readiness: ui.readiness, alerts: ui.alerts };
+    Object.entries(map).forEach(([k, v]) => {
+        const span = document.querySelector(`[data-tab="${k}"] span`);
+        if (span) span.innerText = v;
+    });
+}
+
 window.switchTab = (id) => {
-    console.log("[MatdanSathi] Tab:", id);
     State.activeTab = id;
     ApiService.log('switch_tab', { target_tab: id });
     UIController.render();
     if (typeof lucide !== 'undefined') lucide.createIcons();
 };
 
-async function start() {
-    console.log("[MatdanSathi] Starting init...");
+async function initApp() {
     initFirebase();
-    const resp = await fetch('data.json?v=3').catch(() => null);
-    if (resp && resp.ok) appData = await resp.json();
+    try {
+        const res = await fetch('data.json?v=4');
+        State.appData = await res.json();
+    } catch (e) {
+        console.warn("[MatdanSathi] Data load failed, using fallback.");
+    }
     
-    const updateNavUI = () => {
-        const ui = getUI();
-        const map = { journey: ui.journey, assistant: ui.assistant, vote: ui.vote || 'Vote', readiness: ui.readiness, alerts: ui.alerts };
-        Object.entries(map).forEach(([k, v]) => {
-            const s = document.querySelector(`[data-tab="${k}"] span`);
-            if (s) s.innerText = v;
-        });
-    };
     updateNavUI();
-
-    document.querySelectorAll('.nav-item').forEach(n => n.onclick = () => window.switchTab(n.dataset.tab));
-    const updateLangUI = () => {
-        document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === currentLang));
-    };
-
-    document.querySelectorAll('.lang-btn').forEach(b => {
-        b.onclick = () => {
-            currentLang = b.dataset.lang;
-            localStorage.setItem('matdan_lang', currentLang);
-            updateLangUI();
-            updateNavUI();
-            window.switchTab(activeTab);
-        };
-    });
-    updateLangUI();
     
-    const pbtn = document.querySelector('.profile-btn');
-    if (pbtn) pbtn.onclick = () => {
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.onclick = () => switchLang(btn.dataset.lang);
+        if (btn.dataset.lang === State.currentLang) btn.classList.add('active');
+    });
+
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.onclick = () => window.switchTab(btn.dataset.tab);
+    });
+
+    document.querySelector('.profile-btn')?.addEventListener('click', () => {
         const t = document.getElementById('info-modal-template');
         if (!t) return;
         const m = t.content.cloneNode(true).querySelector('.modal-overlay');
         document.body.appendChild(m);
         m.querySelector('.close-modal').onclick = () => m.remove();
         if (typeof lucide !== 'undefined') lucide.createIcons();
-    };
+    });
 
-    const sbtn = document.querySelector('.search-btn');
-    if (sbtn) {
-        sbtn.onclick = () => {
-            window.switchTab('assistant');
-            setTimeout(() => {
-                const input = document.getElementById('chat-input');
-                if (input) input.focus();
-            }, 50);
-        };
-    }
+    document.querySelector('.search-btn')?.addEventListener('click', () => {
+        window.switchTab('assistant');
+        setTimeout(() => document.getElementById('chat-input')?.focus(), 50);
+    });
 
-    console.log("[MatdanSathi] Init complete. UI Ready.");
     window.switchTab('journey');
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start);
+    document.addEventListener('DOMContentLoaded', initApp);
 } else {
-    start();
+    initApp();
 }
