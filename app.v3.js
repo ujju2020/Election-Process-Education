@@ -1,8 +1,11 @@
 /**
- * @file app.v2.js
- * @description Main application controller for Matdan Sathi.
- * Implements Service-Controller pattern for high maintainability and code quality.
- * Copyright (c) 2026 Ujjwal Kumar Bhowmick. All rights reserved.
+ * @file app.v3.js
+ * @version 3.0.0
+ * @description Main application controller for Matdan Sathi - Election Process Education Assistant.
+ * Implements Service-Controller + EventBus pattern for high maintainability and code quality.
+ * Integrates Firebase Auth, Analytics, Realtime DB, Performance, and Remote Config.
+ * @author Ujjwal Kumar Bhowmick (ujjwalkumarbhowmick30@gmail.com)
+ * @copyright 2026 Ujjwal Kumar Bhowmick. All rights reserved.
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
