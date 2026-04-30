@@ -35,17 +35,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
-    <!-- Icons -->
+    <!-- Core Logic -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Markdown Parser -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/11.4.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.4.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.4.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.4.0/firebase-performance-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.4.0/firebase-remote-config-compat.js"></script>
 
     <link rel="stylesheet" href="styles.css?v=3">
 </head>
@@ -251,5 +244,14 @@
     </template>
 
     <script type="module" src="app.v3.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('[PWA] ServiceWorker registered'))
+                    .catch(err => console.log('[PWA] ServiceWorker failed', err));
+            });
+        }
+    </script>
 </body>
 </html>

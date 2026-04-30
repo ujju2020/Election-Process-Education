@@ -1,16 +1,14 @@
 {
   "name": "matdan-sathi",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Matdan Sathi - Election Process Education Assistant PWA",
   "main": "app.v3.js",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "test:watch": "node --test --watch tests/*.test.js"
   },
-  "keywords": ["election", "education", "pwa", "india", "firebase"],
+  "keywords": ["election", "education", "pwa", "india", "firebase", "google-cloud"],
   "author": "Ujjwal Kumar Bhowmick <ujjwalkumarbhowmick30@gmail.com>",
   "license": "ISC",
-  "dependencies": {
-    "puppeteer": "^24.42.0"
-  }
+  "dependencies": {}
 }

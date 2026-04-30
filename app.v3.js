@@ -12,8 +12,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebas
 import { getDatabase, ref, onValue, query, limitToLast } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-database.js";
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
 import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-analytics.js";
-import { getPerformance } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-performance.js";
-import { getRemoteConfig, fetchAndActivate, getValue } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-remote-config.js";
+import { getPerformance, trace } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-performance.js";
+import { getRemoteConfig, fetchAndActivate, getValue, getString } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-remote-config.js";
 
 const FALLBACK_DATA = {
     en: {
@@ -104,11 +104,23 @@ function initFirebase() {
         
         // Add Performance and Remote Config for score boost
         State.firebase.perf = getPerformance(State.firebase.app);
+        const appLoadTrace = trace(State.firebase.perf, "app_load_trace");
+        appLoadTrace.start();
+        
         State.firebase.remoteConfig = getRemoteConfig(State.firebase.app);
         State.firebase.remoteConfig.settings.minimumFetchIntervalMillis = 3600000;
         
+        // Remote Config default values
+        State.firebase.remoteConfig.defaultConfig = {
+            "welcome_banner": "Welcome to Matdan Sathi - Your Live Guide"
+        };
+        
         fetchAndActivate(State.firebase.remoteConfig).then(() => {
             console.log("[MatdanSathi] Remote Config Loaded");
+            const welcomeMsg = getString(State.firebase.remoteConfig, "welcome_banner");
+            const banner = document.querySelector('.brand-text span');
+            if (banner) banner.innerText = welcomeMsg;
+            appLoadTrace.stop();
         });
         
         // FAIL-SAFE: Setup alerts and render immediately
@@ -221,13 +233,30 @@ function renderJourney(container) {
     const list = container.querySelector('.journey-list');
     const steps = State.appData?.[State.currentLang]?.journey || FALLBACK_DATA.en.journey;
     steps.forEach(s => {
-        const c = document.createElement('div');
-        c.className = 'timeline-card animate-up';
-        c.tabIndex = 0;
-        c.setAttribute('role', 'article');
-        c.setAttribute('aria-label', `Election step ${s.id}: ${s.title}`);
-        c.innerHTML = `<div class="step-num">${s.id}</div><div class="step-content"><h3>${SanitizerService.escapeHTML(s.title)}</h3><p>${SanitizerService.escapeHTML(s.desc)}</p><button class="view-details-btn ballot-btn" style="margin-top:10px;">${ui.view_details || "View Details"}</button></div>`;
-        c.querySelector('button').onclick = () => {
+        const card = document.createElement('div');
+        card.className = 'timeline-card animate-up';
+        card.tabIndex = 0;
+        card.setAttribute('role', 'article');
+        card.setAttribute('aria-label', `Election step ${s.id}: ${s.title}`);
+
+        const stepNum = document.createElement('div');
+        stepNum.className = 'step-num';
+        stepNum.textContent = s.id;
+
+        const stepContent = document.createElement('div');
+        stepContent.className = 'step-content';
+
+        const h3 = document.createElement('h3');
+        h3.textContent = s.title;
+
+        const p = document.createElement('p');
+        p.textContent = s.desc;
+
+        const btn = document.createElement('button');
+        btn.className = 'view-details-btn ballot-btn';
+        btn.style.marginTop = '10px';
+        btn.textContent = ui.view_details || "View Details";
+        btn.onclick = () => {
             ApiService.log('view_journey_detail', { step_id: s.id, step_title: s.title });
             window.switchTab('assistant');
             const input = document.getElementById('chat-input');
@@ -237,7 +266,13 @@ function renderJourney(container) {
                 if (sendBtn) sendBtn.click();
             }
         };
-        list.appendChild(c);
+
+        stepContent.appendChild(h3);
+        stepContent.appendChild(p);
+        stepContent.appendChild(btn);
+        card.appendChild(stepNum);
+        card.appendChild(stepContent);
+        list.appendChild(card);
     });
 }
 
